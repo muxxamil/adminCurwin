@@ -5,7 +5,7 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 if(!empty($_SESSION['ApiToken'])) {
-	header('Location: dashboard.php');
+	header('Location: dashboard');
 }
 
 ?>
@@ -166,7 +166,7 @@ if(!empty($_SESSION['ApiToken'])) {
 								$messageError.removeClass('d-none');
 							} else {
 								$messageError.addClass('d-none');
-								window.location = "dashboard.php";
+								window.location = "dashboard";
 							}
 						});
 					}

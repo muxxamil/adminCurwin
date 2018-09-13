@@ -5,7 +5,7 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 if(empty($_SESSION['ApiToken'])) {
-	header('Location: index.php');
+	header('Location: index');
 }
 
 ?>
@@ -299,42 +299,42 @@ if(empty($_SESSION['ApiToken'])) {
 				            
 				                <ul class="nav nav-main">
 				                    <li class="<?php echo ($activeNav == 'Dashboard') ? 'nav-active' : ''; ?>">
-				                        <a class="nav-link" href="dashboard.php">
+				                        <a class="nav-link" href="dashboard">
 				                            <i class="fas fa-home" aria-hidden="true"></i>
 				                            <span>Dashboard</span>
 				                        </a>                        
 				                    </li>
 				                    <li class="nav-parent <?php echo ($activeNav == 'User') ? 'nav-active' : ''; ?>">
-				                        <a class="nav-link" href="usersList.php">
+				                        <a class="nav-link" href="usersList">
 				                            <i class="fas fa-users" aria-hidden="true"></i>
 				                            <span>Users</span>
 				                        </a>
 				                        <ul class="nav nav-children">
 				                            <li>
-				                                <a class="nav-link" href="usersList.php">
+				                                <a class="nav-link" href="usersList">
 				                                    Users List
 				                                </a>
 				                            </li>
 				                            <li>
-				                                <a class="nav-link" href="addUser.php">
+				                                <a class="nav-link" href="addUser">
 				                                    Add new User
 				                                </a>
 				                            </li>
 				                        </ul>
 				                    </li>
 				                    <li class="nav-parent <?php echo ($activeNav == 'Blog') ? 'nav-active' : ''; ?>">
-				                        <a class="nav-link" href="postsList.php">
+				                        <a class="nav-link" href="postsList">
 				                            <i class="fab fa-blogger" aria-hidden="true"></i>
 				                            <span>Blog</span>
 				                        </a>
 				                        <ul class="nav nav-children">
 				                            <li>
-				                                <a class="nav-link" href="postsList.php">
+				                                <a class="nav-link" href="postsList">
 				                                    Posts List
 				                                </a>
 				                            </li>
 				                            <li>
-				                                <a class="nav-link" href="addPost.php">
+				                                <a class="nav-link" href="addPost">
 				                                    Add new Post
 				                                </a>
 				                            </li>
@@ -432,7 +432,7 @@ if(empty($_SESSION['ApiToken'])) {
 						<div class="right-wrapper text-right">
 							<ol class="breadcrumbs">
 								<li>
-									<a href="dashboard.php">
+									<a href="dashboard">
 										<i class="fas fa-home"></i>
 									</a>
 								</li>
