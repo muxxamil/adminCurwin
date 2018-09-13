@@ -1,71 +1,40 @@
 /*
 Name: 			Theme Base
 Written by: 	Okler Themes - (http://www.okler.net)
-Theme Version:	1.1.0
+Theme Version: 	2.1.1
 */
 
-// Theme
-(function( $ ) {
+window.theme = {};
 
-	'use strict';
+// Theme Common Functions
+window.theme.fn = {
 
-	window.theme = {};
+	getOptions: function(opts) {
 
-	// Theme Common Functions
-	window.theme.fn = {
+		if (typeof(opts) == 'object') {
 
-		getOptions: function(opts) {
+			return opts;
 
-			if (typeof(opts) == 'object') {
+		} else if (typeof(opts) == 'string') {
 
-				return opts;
-
-			} else if (typeof(opts) == 'string') {
-
-				try {
-					return JSON.parse(opts.replace(/'/g,'"').replace(';',''));
-				} catch(e) {
-					return {};
-				}
-
-			} else {
-
+			try {
+				return JSON.parse(opts.replace(/'/g,'"').replace(';',''));
+			} catch(e) {
 				return {};
-
 			}
 
-		},
+		} else {
 
-		getOptionsSemicolon: function(opts) {
-
-			if (typeof(opts) == 'object') {
-
-				return opts;
-
-			} else if (typeof(opts) == 'string') {
-
-				try {
-					return JSON.parse(opts.replace(/'/g,'"'));
-				} catch(e) {
-					return {};
-				}
-
-			} else {
-
-				return {};
-
-			}
+			return {};
 
 		}
 
-	};
+	}
 
-}).apply( this, [ jQuery ]);
+};
 
 // Animate
 (function(theme, $) {
-
-	'use strict';
 
 	theme = theme || {};
 
@@ -77,9 +46,9 @@ Theme Version:	1.1.0
 
 	PluginAnimate.defaults = {
 		accX: 0,
-		accY: -80,
-		delay: 100,
-		duration: '750ms'
+		accY: -150,
+		delay: 1,
+		duration: '1s'
 	};
 
 	PluginAnimate.prototype = {
@@ -116,41 +85,45 @@ Theme Version:	1.1.0
 			var self = this,
 				$el = this.options.wrapper,
 				delay = 0,
-				duration = this.options.duration,
-				elTopDistance = $el.offset().top + 100,
+				duration = '1s',
+				elTopDistance = $el.offset().top,
 				windowTopDistance = $(window).scrollTop();
 
-			$el.addClass('appear-animation animated');
+			$(document).ready(function(){
 
-			if (!$('html').hasClass('no-csstransitions') && $(window).width() > 767 && elTopDistance >= windowTopDistance) {
+				$el.addClass('appear-animation animated');
 
-				$el.appear(function() {
+				if (!$('html').hasClass('no-csstransitions') && $(window).width() > 767 && elTopDistance > windowTopDistance) {
 
-					$el.one('animation:show', function(ev) {
-						delay = ($el.attr('data-appear-animation-delay') ? $el.attr('data-appear-animation-delay') : self.options.delay);
-						duration = ($el.attr('data-appear-animation-duration') ? $el.attr('data-appear-animation-duration') : self.options.duration);
+					$el.appear(function() {
 
-						if (duration != '750ms') {
-							$el.css('animation-duration', duration);
-						}
+						$el.one('animation:show', function(ev) {
+							delay = ($el.attr('data-appear-animation-delay') ? $el.attr('data-appear-animation-delay') : self.options.delay);
+							duration = ($el.attr('data-appear-animation-duration') ? $el.attr('data-appear-animation-duration') : self.options.duration);
 
-						$el.css('animation-delay', delay + 'ms');
+							if (duration != '1s') {
+								$el.css('animation-duration', duration);
+							}
 
-						$el.addClass($el.attr('data-appear-animation') + ' appear-animation-visible');
+							setTimeout(function() {
+								$el.addClass($el.attr('data-appear-animation') + ' appear-animation-visible');
+							}, delay);
+						});
+
+						$el.trigger('animation:show');
+
+					}, {
+						accX: self.options.accX,
+						accY: self.options.accY
 					});
 
-					$el.trigger('animation:show');
+				} else {
 
-				}, {
-					accX: self.options.accX,
-					accY: self.options.accY
-				});
+					$el.addClass('appear-animation-visible');
 
-			} else {
+				}
 
-				$el.addClass('appear-animation-visible');
-
-			}
+			});
 
 			return this;
 		}
@@ -177,13 +150,128 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Carousel
-(function(theme, $) {
+// Bootstrap Toggle
+(function($) {
 
 	'use strict';
 
+	var $window = $( window );
+
+	var toggleClass = function( $el ) {
+		if ( !!$el.data('toggleClassBinded') ) {
+			return false;
+		}
+
+		var $target,
+			className,
+			eventName;
+
+		$target = $( $el.attr('data-target') );
+		className = $el.attr('data-toggle-class');
+		eventName = $el.attr('data-fire-event');
+
+
+		$el.on('click.toggleClass', function(e) {
+			e.preventDefault();
+			$target.toggleClass( className );
+
+			var hasClass = $target.hasClass( className );
+
+			if ( !!eventName ) {
+				$window.trigger( eventName, {
+					added: hasClass,
+					removed: !hasClass
+				});
+			}
+		});
+
+		$el.data('toggleClassBinded', true);
+
+		return true;
+	};
+
+	$(function() {
+		$('[data-toggle-class][data-target]').each(function() {
+			toggleClass( $(this) );
+		});
+	});
+
+}).apply(this, [jQuery]);
+
+// Cards
+(function($) {
+
+	$(function() {
+		$('.card')
+			.on( 'card:toggle', function() {
+				var $this,
+					direction;
+
+				$this = $(this);
+				direction = $this.hasClass( 'card-collapsed' ) ? 'Down' : 'Up';
+
+				$this.find('.card-body, .card-footer')[ 'slide' + direction ]( 200, function() {
+					$this[ (direction === 'Up' ? 'add' : 'remove') + 'Class' ]( 'card-collapsed' )
+				});
+			})
+			.on( 'card:dismiss', function() {
+				var $this = $(this);
+
+				if ( !!( $this.parent('div').attr('class') || '' ).match( /col-(xs|sm|md|lg)/g ) && $this.siblings().length === 0 ) {
+					$row = $this.closest('.row');
+					$this.parent('div').remove();
+					if ( $row.children().length === 0 ) {
+						$row.remove();
+					}
+				} else {
+					$this.remove();
+				}
+			})
+			.on( 'click', '[data-card-toggle]', function( e ) {
+				e.preventDefault();
+				$(this).closest('.card').trigger( 'card:toggle' );
+			})
+			.on( 'click', '[data-card-dismiss]', function( e ) {
+				e.preventDefault();
+				$(this).closest('.card').trigger( 'card:dismiss' );
+			})
+			/* Deprecated */
+			.on( 'click', '.card-actions a.fa-caret-up', function( e ) {
+				e.preventDefault();
+				var $this = $( this );
+
+				$this
+					.removeClass( 'fa-caret-up' )
+					.addClass( 'fa-caret-down' );
+
+				$this.closest('.card').trigger( 'card:toggle' );
+			})
+			.on( 'click', '.card-actions a.fa-caret-down', function( e ) {
+				e.preventDefault();
+				var $this = $( this );
+
+				$this
+					.removeClass( 'fa-caret-down' )
+					.addClass( 'fa-caret-up' );
+
+				$this.closest('.card').trigger( 'card:toggle' );
+			})
+			.on( 'click', '.card-actions a.fa-times', function( e ) {
+				e.preventDefault();
+				var $this = $( this );
+
+				$this.closest('.card').trigger( 'card:dismiss' );
+			});
+	});
+
+})(jQuery);
+
+// Carousel
+(function(theme, $) {
+
 	theme = theme || {};
 
+	var initialized = false;
 	var instanceName = '__carousel';
 
 	var PluginCarousel = function($el, opts) {
@@ -191,33 +279,12 @@ Theme Version:	1.1.0
 	};
 
 	PluginCarousel.defaults = {
-		loop: true,
-		responsive: {
-			0: {
-				items: 1
-			},
-			575: {
-				items: 1
-			},
-			767: {
-				items: 2
-			},
-			991: {
-				items: 3
-			},
-			1199: {
-				items: 4
-			}
-		},
-		navText: [],
-		clonePrevNext: false,
-		vertical: false,
-		rewind: false
+		navText: []
 	};
 
 	PluginCarousel.prototype = {
 		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
@@ -246,140 +313,7 @@ Theme Version:	1.1.0
 		},
 
 		build: function() {
-			if (!($.isFunction($.fn.owlCarousel))) {
-				return this;
-			}
-
-			var self = this,
-				$el = this.options.wrapper;
-
-			// Add Theme Class
-			$el.addClass('owl-theme');
-
-			// Force RTL according to HTML dir attribute
-			if ($('html').attr('dir') == 'rtl') {
-				this.options = $.extend(true, {}, this.options, {
-					rtl: true
-				});
-			}
-
-			if (this.options.items == 1) {
-				this.options.responsive = {}
-			}
-
-			// Auto Height Fixes
-			if (this.options.autoHeight) {
-				var itemsHeight = [];
-
-				$el.find('.owl-item').each(function(){
-					if( $(this).hasClass('active') ) {
-						itemsHeight.push( $(this).height() );
-					}
-				});
-
-				$(window).afterResize(function() {
-					$el.find('.owl-stage-outer').height( Math.max.apply(null, itemsHeight) );
-				});
-
-				$(window).on('load', function() {
-					$el.find('.owl-stage-outer').height( Math.max.apply(null, itemsHeight) );
-				});
-			}
-
-			// Initialize OwlCarousel
-			$el.owlCarousel(this.options).addClass('owl-carousel-init');
-
-			// Carousel Corner Left Bottom Style
-			if( $('.carousel-corner-left-bottom').get(0) ) {
-				$('.carousel-corner-left-bottom').on('drag.owl.carousel change.owl.carousel', function(e){
-					$(this).find('.owl-item').addClass('changing');
-				});
-
-				$('.carousel-corner-left-bottom').on('changed.owl.carousel', function(e){
-					setTimeout(function(){
-						$('.carousel-corner-left-bottom').find('.owl-item').removeClass('changing');
-					}, 500);
-				});
-			}
-
-			// Carousel Center Active Items Style
-			if( $el.hasClass('carousel-center-active-items') ) {
-				var itemsActive    = $el.find('.owl-item.active'),
-					indexCenter    = Math.floor( ($el.find('.owl-item.active').length - 1) / 2 ),
-					itemCenter     = itemsActive.eq(indexCenter),
-					itemCenterPrev = itemCenter.prev(),
-					itemCenterNext = itemCenter.next();
-
-				itemCenter.addClass('current');
-				itemCenterPrev.addClass('remove-blur');
-				itemCenterNext.addClass('remove-blur');
-
-				$el.on('change.owl.carousel', function(event) {
-				  	$el.find('.owl-item').removeClass('current');
-					
-					setTimeout(function(){
-					  	var itemsActive    = $el.find('.owl-item.active'),
-					  		itemCenter     = itemsActive.eq(indexCenter);
-
-					  	itemCenter.addClass('current');
-
-						// Add blur effect for first and last active items
-					  	itemsActive.first().removeClass('remove-blur');
-						itemsActive.last().removeClass('remove-blur');
-
-					  	// Remove blur effect for elements at right and left of current item
-					  	itemCenter.prev().addClass('remove-blur');
-						itemCenter.next().addClass('remove-blur');
-
-					}, 100);
-				});
-
-				$el.on('resized.owl.carousel', function(event) {
-					if( $el.find('.owl-item.active').length == 1 ) {
-						$el
-							.css({
-								width: '100%'
-							})
-							.addClass('rm-degrade-now');
-					} else {
-						$el
-							.css({
-								width: ''
-							})
-							.removeClass('rm-degrade-now');
-					}
-
-					$el.trigger('refresh.owl.carousel');
-				});
-
-				// Refresh
-				$el.trigger('refresh.owl.carousel');
-			}
-
-			// Clone Prev Next
-			if (this.options.clonePrevNext) {
-				$el.find('.owl-item').each(function() {
-					$(this).prev().find('div:not(.clone-inside)').clone().addClass('clone-inside prev').prependTo($(this));
-					$(this).next().find('div:not(.clone-inside)').clone().addClass('clone-inside next').appendTo($(this));
-				});
-
-				$el.on('change.owl.carousel', function(){
-					$el.find('.owl-item.active div:not(.prev)').css('opacity', 0);
-				});
-
-				$el.on('changed.owl.carousel', function(){
-					$el.find('.owl-item').one('animationend', function(){
-						$el.find('.owl-item div:not(.prev)').css('opacity', 1);
-						$el.find('.owl-item.cloned div:not(.prev)').css('opacity', 0);
-						$el.find('.owl-item.active div:not(.prev)').css('opacity', 1);
-					});
-						
-				});
-
-				$el.on('drag.owl.carousel', function(){
-					$el.find('.owl-item div:not(.prev)').css('opacity', 1);
-				});
-			}
+			this.options.wrapper.owlCarousel(this.options).addClass("owl-carousel-init");
 
 			return this;
 		}
@@ -409,8 +343,6 @@ Theme Version:	1.1.0
 // Chart Circular
 (function(theme, $) {
 
-	'use strict';
-
 	theme = theme || {};
 
 	var instanceName = '__chartCircular';
@@ -423,13 +355,13 @@ Theme Version:	1.1.0
 		accX: 0,
 		accY: -150,
 		delay: 1,
-		barColor: '#2388ed',
-		trackColor: '#F1F3F7',
+		barColor: '#0088CC',
+		trackColor: '#f2f2f2',
 		scaleColor: false,
 		scaleLength: 5,
-		lineCap: 'square',
-		lineWidth: 3,
-		size: 150,
+		lineCap: 'round',
+		lineWidth: 13,
+		size: 175,
 		rotate: 0,
 		animate: ({
 			duration: 2500,
@@ -439,7 +371,7 @@ Theme Version:	1.1.0
 
 	PluginChartCircular.prototype = {
 		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
@@ -468,14 +400,15 @@ Theme Version:	1.1.0
 		},
 
 		build: function() {
-			if (!($.isFunction($.fn.appear)) || !($.isFunction($.fn.easyPieChart))) {
-				return this;
-			}
-
 			var self = this,
 				$el = this.options.wrapper,
 				value = ($el.attr('data-percent') ? $el.attr('data-percent') : 0),
-				percentEl = $el.find('.percent');
+				percentEl = $el.find('.percent'),
+				shouldAnimate,
+				data;
+
+			shouldAnimate = $.isFunction($.fn[ 'appear' ]) && ( typeof $.browser !== 'undefined' && !$.browser.mobile );
+			data = { accX: self.options.accX, accY: self.options.accY };
 
 			$.extend(true, self.options, {
 				onStep: function(from, to, currentValue) {
@@ -483,31 +416,32 @@ Theme Version:	1.1.0
 				}
 			});
 
-			$el.attr('data-percent', 0);
+			$el.attr('data-percent', (shouldAnimate ? 0 : value) );
 
-			$el.appear(function() {
+			$el.easyPieChart( this.options );
 
-				$el.easyPieChart(self.options);
+			if ( shouldAnimate ) {
+				$el.appear(function() {
+					setTimeout(function() {
+						$el.data('easyPieChart').update(value);
+						$el.attr('data-percent', value);
 
-				setTimeout(function() {
-
-					$el.data('easyPieChart').update(value);
-					$el.attr('data-percent', value);
-
-				}, self.options.delay);
-
-			}, {
-				accX: self.options.accX,
-				accY: self.options.accY
-			});
+					}, self.options.delay);
+				}, data);
+			} else {
+				$el.data('easyPieChart').update(value);
+				$el.attr('data-percent', value);
+			}
 
 			return this;
 		}
 	};
 
 	// expose to scope
-	$.extend(theme, {
-		PluginChartCircular: PluginChartCircular
+	$.extend(true, theme, {
+		Chart: {
+			PluginChartCircular: PluginChartCircular
+		}
 	});
 
 	// jquery plugin
@@ -526,32 +460,27 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Counter
+// Codemirror
 (function(theme, $) {
-
-	'use strict';
 
 	theme = theme || {};
 
-	var instanceName = '__counter';
+	var instanceName = '__codemirror';
 
-	var PluginCounter = function($el, opts) {
+	var PluginCodeMirror = function($el, opts) {
 		return this.initialize($el, opts);
 	};
 
-	PluginCounter.defaults = {
-		accX: 0,
-		accY: 0,
-		speed: 3000,
-		refreshInterval: 100,
-		decimals: 0,
-		onUpdate: null,
-		onComplete: null
+	PluginCodeMirror.defaults = {
+		lineNumbers: true,
+		styleActiveLine: true,
+		matchBrackets: true,
+		theme: 'monokai'
 	};
 
-	PluginCounter.prototype = {
+	PluginCodeMirror.prototype = {
 		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
@@ -572,41 +501,13 @@ Theme Version:	1.1.0
 		},
 
 		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginCounter.defaults, opts, {
-				wrapper: this.$el
-			});
+			this.options = $.extend( true, {}, PluginCodeMirror.defaults, opts );
 
 			return this;
 		},
 
 		build: function() {
-			if (!($.isFunction($.fn.countTo))) {
-				return this;
-			}
-
-			var self = this,
-				$el = this.options.wrapper;
-
-			$.extend(self.options, {
-				onComplete: function() {
-					if ($el.data('append')) {
-						$el.html($el.html() + $el.data('append'));
-					}
-
-					if ($el.data('prepend')) {
-						$el.html($el.data('prepend') + $el.html());
-					}
-				}
-			});
-
-			$el.appear(function() {
-
-				$el.countTo(self.options);
-
-			}, {
-				accX: self.options.accX,
-				accY: self.options.accY
-			});
+			CodeMirror.fromTextArea( this.$el.get(0), this.options );
 
 			return this;
 		}
@@ -614,18 +515,18 @@ Theme Version:	1.1.0
 
 	// expose to scope
 	$.extend(theme, {
-		PluginCounter: PluginCounter
+		PluginCodeMirror: PluginCodeMirror
 	});
 
 	// jquery plugin
-	$.fn.themePluginCounter = function(opts) {
-		return this.map(function() {
+	$.fn.themePluginCodeMirror = function(opts) {
+		return this.each(function() {
 			var $this = $(this);
 
 			if ($this.data(instanceName)) {
 				return $this.data(instanceName);
 			} else {
-				return new PluginCounter($this, opts);
+				return new PluginCodeMirror($this, opts);
 			}
 
 		});
@@ -633,338 +534,23 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Double Carousel
+// Colorpicker
 (function(theme, $) {
-
-	'use strict';
 
 	theme = theme || {};
 
-	var instanceName = '__doubleCarousel';
+	var instanceName = '__colorpicker';
 
-	var PluginDoubleCarousel = function($el, opts) {
+	var PluginColorPicker = function($el, opts) {
 		return this.initialize($el, opts);
 	};
 
-	PluginDoubleCarousel.defaults = {
-		loop: true,
-		responsive: {
-			0: {
-				items: 1
-			},
-			479: {
-				items: 1
-			},
-			768: {
-				items: 1
-			},
-			979: {
-				items: 2
-			},
-			1199: {
-				items: 3
-			}
-		},
-		margin: 20,
-		mouseDrag: false,
-		navText: [],
-		autoplay: true,
-		autoplayTimeout: 5000,
-		rewind: false
+	PluginColorPicker.defaults = {
 	};
 
-	PluginDoubleCarousel.prototype = {
+	PluginColorPicker.prototype = {
 		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
-			this.$carousels = $el.find('.owl-carousel');
-			this.$mainCarousel = $el.find('.wrapper-right .owl-carousel');
-			this.$mirrorCarousel = $el.find('.wrapper-left .owl-carousel');
-
-			this
-				.setData()
-				.setOptions(opts)
-				.build()
-				.navigation();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginDoubleCarousel.defaults, opts, {
-				wrapper: this.$el
-			});
-
-			return this;
-		},
-
-		build: function() {
-			if (!($.isFunction($.fn.owlCarousel))) {
-				return this;
-			}
-
-			var self 	  = this,
-				$el 	  = this.options.wrapper,
-				firstLoad = true;
-
-			// Add Theme Class
-			self.$carousels.addClass('owl-theme');
-
-			if (this.options.items == 1) {
-				this.options.responsive = {}
-			}
-
-			// Auto Height Fixes
-			if (this.options.autoHeight) {
-				var itemsHeight = [];
-
-				self.$carousels.find('.owl-item').each(function(){
-					if( $(this).hasClass('active') ) {
-						itemsHeight.push( $(this).height() );
-					}
-				});
-
-				$(window).afterResize(function() {
-					self.$carousels.find('.owl-stage-outer').height( Math.max.apply(null, itemsHeight) );
-				});
-
-				$(window).on('load', function() {
-					self.$carousels.find('.owl-stage-outer').height( Math.max.apply(null, itemsHeight) );
-				});
-			}
-
-			// If Mobile
-			if ($.browser.mobile) {
-				this.options = $.extend(true, {}, this.options, {
-					mouseDrag: true,
-					margin: 0
-				});
-			}
-
-			// Initialize Main Carousel
-			self.$mainCarousel.owlCarousel(this.options).addClass('owl-carousel-init mirrored');
-
-			// Remove autoplay from Mirror Carousel
-			if( this.options.autoplay ) {
-				this.options = $.extend(true, {}, this.options, {
-					autoplay: false
-				});
-			}
-
-			// Initialize Mirror Carousel
-			self.$mirrorCarousel.owlCarousel(this.options).addClass('owl-carousel-init mirrored');			
-
-			// Set the first item position of Mirror Carousel
-			for( var i=1; i <= self.$mirrorCarousel.find('.owl-item.active').length - 1; i++ ) {
-				self.$mirrorCarousel.trigger('prev.owl.carousel');
-			}
-			
-			self.events();
-			self.recalcCarouselsWidth();
-
-			if( firstLoad == true ) {
-				firstLoad = false;
-				self.recalcCarouselsWidth();
-
-				setTimeout(function(){
-	        		self.$mirrorCarousel.addClass('show-carousel');
-	        		self.$mainCarousel.addClass('show-carousel');
-
-	        		self.refreshOnResize();
-        		}, 500);
-    		}
-
-    		if( firstLoad == false ) {
-    			self.setCurrentItem();
-    		}
-
-			return this;
-		},
-
-		setCurrentItem: function() {
-			var self = this,
-				flag = false;
-
-			self.$mainCarousel.on('change.owl.carousel', function(event) {
-			  	if (event.namespace && event.property.name === 'position' && flag == false) {
-				    var target = event.relatedTarget.relative(event.property.value, true);
-				    flag = true;
-
-				    self.$mirrorCarousel.owlCarousel('to', target - (self.$mirrorCarousel.find('.owl-item.active').length - 1), 300, true);
-				    self.$mirrorCarousel.find('.owl-item').removeClass('current');
-			        self.$mainCarousel.find('.owl-item').removeClass('current');
-			        
-			        setTimeout(function(){
-			        	self.$mirrorCarousel.find('.owl-item.active').eq( self.$mirrorCarousel.find('.owl-item.active').length - 1 ).addClass('current');
-			        	self.$mainCarousel.find('.owl-item.active').eq(0).addClass('current');
-			        }, 10);
-
-			        flag = false;
-			  	}
-			});
-
-			if( $.browser.mobile ) {
-				self.$mirrorCarousel.on('change.owl.carousel', function(event) {
-				  	if (event.namespace && event.property.name === 'position' && flag == false) {
-					    var target = event.relatedTarget.relative(event.property.value, true);
-					    flag = true;
-
-					    self.$mainCarousel.owlCarousel('to', target - (self.$mainCarousel.find('.owl-item.active').length - 1), 300, true);
-					    self.$mainCarousel.find('.owl-item').removeClass('current');
-				        self.$mirrorCarousel.find('.owl-item').removeClass('current');
-				        
-				        setTimeout(function(){
-				        	self.$mainCarousel.find('.owl-item.active').eq( self.$mainCarousel.find('.owl-item.active').length - 1 ).addClass('current');
-				        	self.$mirrorCarousel.find('.owl-item.active').eq(0).addClass('current');
-				        }, 10);
-
-				     	flag = false;
-				  	}
-				});
-			}
-		},
-		
-		recalcCarouselsWidth: function() {
-			var self 		     = this,
-				$el 		     = this.options.wrapper,
-				itemSize         = self.$mirrorCarousel.find('.owl-item').outerWidth(true),
-				dividedItemSize  = itemSize / 2,
-				totalActiveItems = self.$mirrorCarousel.find('.owl-item.active').length;
-
-			if( totalActiveItems > 1 ) {
-				
-				self.$mirrorCarousel.width( $el.find('.wrapper-left').width() + dividedItemSize );
-				setTimeout(function(){
-					self.$mirrorCarousel.css({
-						right: dividedItemSize
-					});
-				}, 500);
-				
-				self.$mainCarousel.width( $el.find('.wrapper-right').width() + dividedItemSize );
-
-			} else {
-				
-				self.$mirrorCarousel.width( $el.find('.wrapper-left').width() );
-				setTimeout(function(){
-					self.$mirrorCarousel.css({
-						right: 0
-					});
-				}, 500);
-				
-				self.$mainCarousel.width( $el.find('.wrapper-right').width() );
-
-			}
-
-			$(document).trigger('double.carousel.recalc.width');
-		},
-
-		refreshOnResize: function() {
-			var self = this;
-
-			$(document).ready(function(){
-				$(window).afterResize(function(){
-					
-					// First - Refresh both carousels to set new sizes
-					self.$mirrorCarousel.trigger('refresh.owl.carousel');
-					self.$mainCarousel.trigger('refresh.owl.carousel');
-
-					// Second - Recalc Carousels width based on new sizes
-					setTimeout(function(){
-						self.recalcCarouselsWidth();
-					}, 600);
-
-				}, false, 300);
-			});
-		},
-
-		navigation: function() {
-			var self       = this,
-				$el        = this.options.wrapper,
-				$leftArrow  = $el.find('.arrow-left'),
-				$rightArrow = $el.find('.arrow-right');
-
-			$leftArrow.on('click', function(e){
-				self.$mainCarousel.trigger('prev.owl.carousel');
-			});
-
-			$rightArrow.on('click', function(e){
-				self.$mainCarousel.trigger('next.owl.carousel');
-			});
-		},
-
-		events: function() {
-			var self = this;
-
-			$(window).on('double.carousel.recalc.width', function(e){
-					
-				// Refresh carousels to set new sizes
-				self.$mirrorCarousel.trigger('refresh.owl.carousel');
-				self.$mainCarousel.trigger('refresh.owl.carousel');
-				
-				// Set current item
-				self.$mirrorCarousel.find('.owl-item.active').eq( self.$mirrorCarousel.find('.owl-item.active').length - 1 ).addClass('current');
-	        	self.$mainCarousel.find('.owl-item.active').eq(0).addClass('current');
-
-				// Position the first item
-				self.$mainCarousel.trigger('prev.owl.carousel').trigger('next.owl.carousel');
-        		
-			});
-		}
-	};
-
-	// expose to scope
-	$.extend(theme, {
-		PluginDoubleCarousel: PluginDoubleCarousel
-	});
-
-	// jquery plugin
-	$.fn.themePluginDoubleCarousel = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginDoubleCarousel($this, opts);
-			}
-
-		});
-	}
-
-}).apply(this, [window.theme, jQuery]);
-
-// Float Element
-(function(theme, $) {
-
-	'use strict';
-
-	theme = theme || {};
-
-	var instanceName = '__floatElement';
-
-	var PluginFloatElement = function($el, opts) {
-		return this.initialize($el, opts);
-	};
-
-	PluginFloatElement.defaults = {
-		startPos: 'top',
-		speed: 3,
-		horizontal: false,
-		transition: false
-	};
-
-	PluginFloatElement.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
@@ -985,105 +571,32 @@ Theme Version:	1.1.0
 		},
 
 		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginFloatElement.defaults, opts, {
-				wrapper: this.$el
-			});
+			this.options = $.extend( true, {}, PluginColorPicker.defaults, opts );
 
 			return this;
 		},
 
 		build: function() {
-			var self = this,
-				$el = this.options.wrapper,
-				$window = $(window),
-				minus;
-
-			if( self.options.style ) {
-				console.log(self.options.style);
-				$el.attr('style', self.options.style);
-			}
-
-			if( $window.width() > 767 ) {
-
-				// Set Start Position
-				if( self.options.startPos == 'none' ) {
-					minus = '';
-				} else if( self.options.startPos == 'top' ) {
-					$el.css({
-						top: 0
-					});
-					minus = '';
-				} else {
-					$el.css({
-						bottom: 0
-					});
-					minus = '-';
-				}
-
-				// Set Transition
-				if( self.options.transition ) {
-					$el.css({
-						transition: 'ease transform 500ms'
-					});
-				}
-
-				// First Load
-				self.movement(minus);	
-
-				// Scroll
-				$window.on('scroll', function(){
-					self.movement(minus);				   
-				});
-
-			}
+			this.$el.colorpicker( this.options );
 
 			return this;
-		},
-
-		movement: function(minus) {
-			var self = this,
-				$el = this.options.wrapper,
-				$window = $(window),
-				scrollTop = $window.scrollTop(),
-		    	elementOffset = $el.offset().top,
-		     	currentElementOffset = (elementOffset - scrollTop);
-
-		   	var scrollPercent = 100 * currentElementOffset / ($window.height());
-
-		   	if( $el.visible( true ) ) {
-
-		   		if( !self.options.horizontal ) {
-
-		   			$el.css({
-			   			transform: 'translate3d(0, '+ minus + scrollPercent / self.options.speed +'%, 0)'
-			   		});
-
-		   		} else {
-
-		   			$el.css({
-			   			transform: 'translate3d('+ minus + scrollPercent / self.options.speed +'%, '+ minus + scrollPercent / self.options.speed +'%, 0)'
-			   		});
-
-		   		}
-		   		
-		   	}
 		}
 	};
 
 	// expose to scope
 	$.extend(theme, {
-		PluginFloatElement: PluginFloatElement
+		PluginColorPicker: PluginColorPicker
 	});
 
 	// jquery plugin
-	$.fn.themePluginFloatElement = function(opts) {
-		return this.map(function() {
+	$.fn.themePluginColorPicker = function(opts) {
+		return this.each(function() {
 			var $this = $(this);
 
 			if ($this.data(instanceName)) {
 				return $this.data(instanceName);
 			} else {
-				return new PluginFloatElement($this, opts);
+				return new PluginColorPicker($this, opts);
 			}
 
 		});
@@ -1091,37 +604,88 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Icon
-(function(theme, $) {
+// Data Tables - Config
+(function($) {
 
 	'use strict';
 
+	// we overwrite initialize of all datatables here
+	// because we want to use select2, give search input a bootstrap look
+	// keep in mind if you overwrite this fnInitComplete somewhere,
+	// you should run the code inside this function to keep functionality.
+	//
+	// there's no better way to do this at this time :(
+	if ( $.isFunction( $.fn[ 'dataTable' ] ) ) {
+
+		$.extend(true, $.fn.dataTable.defaults, {
+			oLanguage: {
+				sLengthMenu: '_MENU_ records per page',
+				sProcessing: '<i class="fas fa-spinner fa-spin"></i> Loading',
+				sSearch: ''
+			},
+			fnInitComplete: function( settings, json ) {
+				// select 2
+				if ( $.isFunction( $.fn[ 'select2' ] ) ) {
+					$('.dataTables_length select', settings.nTableWrapper).select2({
+						theme: 'bootstrap',
+						minimumResultsForSearch: -1
+					});
+				}
+
+				var options = $( 'table', settings.nTableWrapper ).data( 'plugin-options' ) || {};
+
+				// search
+				var $search = $('.dataTables_filter input', settings.nTableWrapper);
+
+				$search
+					.attr({
+						placeholder: typeof options.searchPlaceholder !== 'undefined' ? options.searchPlaceholder : 'Search...'
+					})
+					.removeClass('form-control-sm').addClass('form-control pull-right');
+
+				if ( $.isFunction( $.fn.placeholder ) ) {
+					$search.placeholder();
+				}
+			}
+		});
+
+	}
+
+}).apply(this, [jQuery]);
+
+// Datepicker
+(function(theme, $) {
+
 	theme = theme || {};
 
-	var instanceName = '__icon';
+	var instanceName = '__datepicker';
 
-	var PluginIcon = function($el, opts) {
+	var PluginDatePicker = function($el, opts) {
 		return this.initialize($el, opts);
 	};
 
-	PluginIcon.defaults = {
-		color: '#2388ED',
-		animated: false,
-		delay: 300
+	PluginDatePicker.defaults = {
 	};
 
-	PluginIcon.prototype = {
+	PluginDatePicker.prototype = {
 		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
 			this.$el = $el;
 
 			this
+				.setVars()
 				.setData()
 				.setOptions(opts)
 				.build();
+
+			return this;
+		},
+
+		setVars: function() {
+			this.skin = this.$el.data( 'plugin-skin' );
 
 			return this;
 		},
@@ -1133,192 +697,227 @@ Theme Version:	1.1.0
 		},
 
 		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginIcon.defaults, opts, {
-				wrapper: this.$el
-			});
+			this.options = $.extend( true, {}, PluginDatePicker.defaults, opts );
 
 			return this;
 		},
 
 		build: function() {
-			var self  	 = this,
-				$el   	 = this.options.wrapper,
-				color 	 = self.options.color,
-				elTopDistance = $el.offset().top,
-				windowTopDistance = $(window).scrollTop(),
-				duration = ( self.options.animated && !self.options.strokeBased ) ? 200 : 100;
+			this.$el.bootstrapDP( this.options );
 
-			// Check origin
-			if( window.location.origin === 'file://' ) {
-				$el.css('opacity', 1);
-				return;
+			if ( !!this.skin && typeof(this.$el.data('datepicker').picker) != 'undefined') {
+				this.$el.data('datepicker').picker.addClass( 'datepicker-' + this.skin );
 			}
 
-			// Duration
-			if( self.options.duration ) {
-				duration = self.options.duration;
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginDatePicker: PluginDatePicker
+	});
+
+	// jquery plugin
+	$.fn.themePluginDatePicker = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginDatePicker($this, opts);
 			}
 
-			// Icon Wrapper
-			var iconWrapper = $('<object class="animated-icon" type="image/svg+xml" data="'+ $el.attr('src') +'"></object>');
+		});
+	}
 
-			if( $el.attr('style') ) {
-				iconWrapper.attr('style', $el.attr('style'));
-			}
+}).apply(this, [window.theme, jQuery]);
 
-			if( $el.attr('width') ) {
-				iconWrapper.attr('width', $el.attr('width'));
-			}
+// Header Menu Nav
+(function(theme, $) {
 
-			iconWrapper.css('height', $el.height());
+	'use strict';
 
-			$el.replaceWith(iconWrapper);
+	theme = theme || {};
 
-			$el = iconWrapper;
+	var initialized = false;
 
-			var icon = new Vivus($($el)[0], {start: 'manual', type: 'sync', selfDestroy: true, duration: duration, onReady: function(obj){
-				var styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style"),
-					animateStyle = '';
+	$.extend(theme, {
 
-				// SVG Fill Based
-				if( self.options.animated && !self.options.strokeBased || !self.options.animated && color && !self.options.strokeBased ) {
-					animateStyle = 'stroke-width: 0.1px; fill-opacity: 0; transition: ease fill-opacity 300ms;';
-					
-					// Set Style on SVG inside object
-					styleElement.textContent = 'path, line, rect, circle, line, polyline { fill: '+ color +'; stroke: '+ color +'; '+ animateStyle + (self.options.svgStyle ? self.options.svgStyle : "") + ' } .finished path { fill-opacity: 1; }';
-					obj.el.appendChild(styleElement);
+		Nav: {
+
+			defaults: {
+				wrapper: $('#mainNav'),
+				scrollDelay: 600,
+				scrollAnimation: 'easeOutQuad'
+			},
+
+			initialize: function($wrapper, opts) {
+				if (initialized) {
+					return this;
 				}
 
-				// SVG Stroke Based
-				if( self.options.animated && self.options.strokeBased || !self.options.animated && color && self.options.strokeBased ) {
+				initialized = true;
+				this.$wrapper = ($wrapper || this.defaults.wrapper);
 
-					// Set Style on SVG inside object
-					styleElement.textContent = 'path, line, rect, circle, line, polyline { stroke: '+ color +'; ' + (self.options.svgStyle ? self.options.svgStyle : "") + '}';
-					obj.el.appendChild(styleElement);
+				this
+					.setOptions(opts)
+					.build()
+					.events();
+
+				return this;
+			},
+
+			setOptions: function(opts) {
+				// this.options = $.extend(true, {}, this.defaults, opts, theme.fn.getOptions(this.$wrapper.data('plugin-options')));
+
+				return this;
+			},
+
+			build: function() {
+				var self = this,
+					$html = $('html'),
+					$header = $('.header'),
+					thumbInfoPreview;
+
+				// Add Arrows
+				$header.find('.dropdown-toggle:not(.notification-icon), .dropdown-submenu > a').append($('<i />').addClass('fas fa-caret-down'));
+
+				// Preview Thumbs
+				self.$wrapper.find('a[data-thumb-preview]').each(function() {
+					thumbInfoPreview = $('<span />').addClass('thumb-info thumb-info-preview')
+											.append($('<span />').addClass('thumb-info-wrapper')
+												.append($('<span />').addClass('thumb-info-image').css('background-image', 'url(' + $(this).data('thumb-preview') + ')')
+										   )
+									   );
+
+					$(this).append(thumbInfoPreview);
+				});
+
+				// Side Header Right (Reverse Dropdown)
+				if($html.hasClass('side-header-right')) {
+					$header.find('.dropdown').addClass('dropdown-reverse');
 				}
 
-				// devcode: !production
-				$(window).on('styleSwitcher.modifyVars', function(e){
-					if( self.options.color.toUpperCase() != '#FFF' ) {
-						if( e.options.colorPrimary.toUpperCase() != self.options.color.toUpperCase() ) {
-							
-							var	styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style"),
-								svg          = obj.el;
+				return this;
+			},
 
-							if( self.options.strokeBased ) {
-								styleElement.textContent = 'path, line, rect, circle, line, polyline { stroke: '+ e.options.colorPrimary +'; }';
-							} else {
-								styleElement.textContent = 'path, line, rect, circle, line, polyline { fill: '+ e.options.colorPrimary +'; stroke: '+ e.options.colorPrimary +'; }';
+			events: function() {
+				var self = this,
+					$header = $('.header'),
+					$window = $(window);
+
+				$header.find('a[href="#"]').on('click', function(e) {
+					e.preventDefault();
+				});
+
+				// Mobile Arrows
+				$header.find('.dropdown-toggle[href="#"], .dropdown-submenu a[href="#"], .dropdown-toggle[href!="#"] .fa-caret-down, .dropdown-submenu a[href!="#"] .fa-caret-down').on('click', function(e) {
+					e.preventDefault();
+					if ($window.width() < 992) {
+						$(this).closest('li').toggleClass('showed');
+					}
+				});
+
+				// Touch Devices with normal resolutions
+				if('ontouchstart' in document.documentElement) {
+					$header.find('.dropdown-toggle:not([href="#"]), .dropdown-submenu > a:not([href="#"])')
+						.on('touchstart click', function(e) {
+							if($window.width() > 991) {
+
+								e.stopPropagation();
+								e.preventDefault();
+
+								if(e.handled !== true) {
+
+									var li = $(this).closest('li');
+
+									if(li.hasClass('tapped')) {
+										location.href = $(this).attr('href');
+									}
+
+									li.addClass('tapped');
+
+									e.handled = true;
+								} else {
+									return false;
+								}
+
+								return false;
+
 							}
-							svg.appendChild(styleElement);
-						
-						}
-					}
-				});
-				// endcode
+						})
+						.on('blur', function(e) {
+							$(this).closest('li').removeClass('tapped');
+						});
 
-				$.event.trigger('theme.plugin.icon.svg.ready');
-			}});
-
-			// Isn't animated
-			if( !self.options.animated ) {
-				setTimeout(function(){
-					icon.finish();
-				}, 10);
-				$el.css({ opacity: 1 });
-			}
-
-			// Animated
-			if( self.options.animated && $(window).width() > 767 ) {
-				
-				// First Load
-				if( $el.visible( true ) ) {
-					self.startIconAnimation( icon, $el );
-				} else if( elTopDistance < windowTopDistance ) {
-					self.startIconAnimation( icon, $el );
 				}
 
-				// On Scroll
-				$(window).on('scroll', function(){
-					if( $el.visible( true ) ) {
-						self.startIconAnimation( icon, $el );
+				// Collapse Nav
+				$header.find('[data-collapse-nav]').on('click', function(e) {
+					$(this).parents('.collapse').removeClass('in');
+				});
+
+				// Anchors Position
+				$('[data-hash]').each(function() {
+
+					var target = $(this).attr('href'),
+						offset = ($(this).is("[data-hash-offset]") ? $(this).data('hash-offset') : 0);
+
+					if($(target).get(0)) {
+						$(this).on('click', function(e) {
+							e.preventDefault();
+
+							// Close Collapse if Opened
+							$(this).parents('.collapse.in').removeClass('in');
+
+							self.scrollToTarget(target, offset);
+
+							return;
+						});
 					}
+
 				});
 
-			} else {
-				
-				$el.css({ opacity: 1 });
+				return this;
+			},
 
-				$(window).on('theme.plugin.icon.svg.ready', function(){
-					setTimeout(function(){
-						icon.el.setAttribute('class', 'finished');
-					}, 300);
+			scrollToTarget: function(target, offset) {
+				var self = this;
+
+				$('body').addClass('scrolling');
+
+				$('html, body').animate({
+					scrollTop: $(target).offset().top - offset
+				}, self.options.scrollDelay, self.options.scrollAnimation, function() {
+					$('body').removeClass('scrolling');
 				});
-				
+
+				return this;
+
 			}
 
-			return this;
-		},
-		startIconAnimation: function(icon, $el) {
-			var self = this;
-
-			// Animate for better performance
-			$({to:0}).animate({to:1}, ((self.options.strokeBased) ? self.options.delay : self.options.delay + 300 ), function() {
-				$el.css({ opacity: 1 });
-			});
-
-			$({to:0}).animate({to:1}, self.options.delay, function() {
-				icon.play(1);
-
-				setTimeout(function(){
-					icon.el.setAttribute('class', 'finished');
-				}, icon.duration * 5 );
-			});
 		}
-	};
 
-	// expose to scope
-	$.extend(theme, {
-		PluginIcon: PluginIcon
 	});
-
-	// jquery plugin
-	$.fn.themePluginIcon = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginIcon($this, opts);
-			}
-
-		});
-	};
 
 }).apply(this, [window.theme, jQuery]);
 
-// Image Background
+// iosSwitcher
 (function(theme, $) {
-
-	'use strict';
 
 	theme = theme || {};
 
-	var instanceName = '__imageBackground';
+	var instanceName = '__IOS7Switch';
 
-	var PluginImageBackground = function($el, opts) {
-		return this.initialize($el, opts);
+	var PluginIOS7Switch = function($el) {
+		return this.initialize($el);
 	};
 
-	PluginImageBackground.defaults = {
-		bgSize: 'cover',
-		bgPosition: 'center'
-	};
-
-	PluginImageBackground.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+	PluginIOS7Switch.prototype = {
+		initialize: function($el) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
@@ -1326,7 +925,6 @@ Theme Version:	1.1.0
 
 			this
 				.setData()
-				.setOptions(opts)
 				.build();
 
 			return this;
@@ -1338,28 +936,12 @@ Theme Version:	1.1.0
 			return this;
 		},
 
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginImageBackground.defaults, opts, {
-				wrapper: this.$el
-			});
-
-			return this;
-		},
-
 		build: function() {
-			var self = this,
-				$el = self.options.wrapper,
-				important;
+			var switcher = new Switch( this.$el.get(0) );
 
-			if( !self.options.imageUrl ) {
-				return;
-			}
-
-			$el.css({
-				'background-image': 'url(' + self.options.imageUrl + ')',
-				'background-size' : self.options.bgSize,
-				'background-position': self.options.bgPosition,
-				'background-repeat': 'no-repeat'
+			$( switcher.el ).on( 'click', function( e ) {
+				e.preventDefault();
+				switcher.toggle();
 			});
 
 			return this;
@@ -1368,18 +950,18 @@ Theme Version:	1.1.0
 
 	// expose to scope
 	$.extend(theme, {
-		PluginImageBackground: PluginImageBackground
+		PluginIOS7Switch: PluginIOS7Switch
 	});
 
 	// jquery plugin
-	$.fn.themePluginImageBackground = function(opts) {
-		return this.map(function() {
+	$.fn.themePluginIOS7Switch = function(opts) {
+		return this.each(function() {
 			var $this = $(this);
 
 			if ($this.data(instanceName)) {
 				return $this.data(instanceName);
 			} else {
-				return new PluginImageBackground($this, opts);
+				return new PluginIOS7Switch($this);
 			}
 
 		});
@@ -1387,98 +969,45 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Lazy Load
-(function(theme, $) {
+// Form to Object
+(function($) {
 
 	'use strict';
 
-	theme = theme || {};
+	$.fn.formToObject = function() {
+		var arrayData,
+			objectData;
 
-	var instanceName = '__lazyload';
+		arrayData	= this.serializeArray();
+		objectData	= {};
 
-	var PluginLazyLoad = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+		$.each( arrayData, function() {
+			var value;
 
-	PluginLazyLoad.defaults = {
-		effect: 'show',
-		appearEffect: '',
-		appear: function(elements_left, settings) {
-			
-		},
-		load: function(elements_left, settings) {
-			$(this).addClass($.trim('lazy-load-loaded ' + settings.appearEffect));
-		}
-	};
-
-	PluginLazyLoad.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
-
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginLazyLoad.defaults, opts, {
-				wrapper: this.$el
-			});
-
-			return this;
-		},
-
-		build: function() {
-			if (!($.isFunction($.fn.lazyload))) {
-				return this;
-			}
-
-			var self = this;
-
-			self.options.wrapper.lazyload(this.options);
-
-			return this;
-		}
-	};
-
-	// expose to scope
-	$.extend(theme, {
-		PluginLazyLoad: PluginLazyLoad
-	});
-
-	// jquery plugin
-	$.fn.themePluginLazyLoad = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
+			if (this.value != null) {
+				value = this.value;
 			} else {
-				return new PluginLazyLoad($this, opts);
+				value = '';
 			}
 
-		});
-	}
+			if (objectData[this.name] != null) {
+				if (!objectData[this.name].push) {
+					objectData[this.name] = [objectData[this.name]];
+				}
 
-}).apply(this, [window.theme, jQuery]);
+				objectData[this.name].push(value);
+			} else {
+				objectData[this.name] = value;
+			}
+		});
+
+		return objectData;
+	};
+
+})(jQuery);
 
 // Lightbox
 (function(theme, $) {
-
-	'use strict';
 
 	theme = theme || {};
 
@@ -1501,20 +1030,12 @@ Theme Version:	1.1.0
 		},
 		ajax: {
 			tError: '<a href="%url%">The content</a> could not be loaded.' // Error message when ajax request failed
-		},
-		callbacks: {
-			open: function() {
-				$('html').addClass('lightbox-open');
-			},
-			close: function() {
-				$('html').removeClass('lightbox-open');
-			}
 		}
 	};
 
 	PluginLightbox.prototype = {
 		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
@@ -1543,10 +1064,6 @@ Theme Version:	1.1.0
 		},
 
 		build: function() {
-			if (!($.isFunction($.fn.magnificPopup))) {
-				return this;
-			}
-
 			this.options.wrapper.magnificPopup(this.options);
 
 			return this;
@@ -1560,7 +1077,7 @@ Theme Version:	1.1.0
 
 	// jquery plugin
 	$.fn.themePluginLightbox = function(opts) {
-		return this.map(function() {
+		return this.each(function() {
 			var $this = $(this);
 
 			if ($this.data(instanceName)) {
@@ -1803,626 +1320,225 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Masonry
-(function(theme, $) {
+// Lock Screen
+(function($) {
 
 	'use strict';
 
-	theme = theme || {};
+	var LockScreen = {
 
-	var instanceName = '__masonry';
-
-	var PluginMasonry = function($el, opts) {
-		return this.initialize($el, opts);
-	};
-
-	PluginMasonry.defaults = {
-		itemSelector: '.isotope-item'
-	};
-
-	PluginMasonry.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
+		initialize: function() {
+			this.$body = $( 'body' );
 
 			this
-				.setData()
-				.setOptions(opts)
-				.build();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginMasonry.defaults, opts, {
-				wrapper: this.$el
-			});
-
-			return this;
+				.build()
+				.events();
 		},
 
 		build: function() {
-			if (!($.isFunction($.fn.isotope))) {
-				return this;
-			}
+			var lockHTML,
+				userinfo;
 
-			var self = this,
-				$window = $(window);
+			userinfo = this.getUserInfo();
+			this.lockHTML = this.buildTemplate( userinfo );
 
-			self.$loader = false;
+			this.$lock        = this.$body.children( '#LockScreenInline' );
+			this.$userPicture = this.$lock.find( '#LockUserPicture' );
+			this.$userName    = this.$lock.find( '#LockUserName' );
+			this.$userEmail   = this.$lock.find( '#LockUserEmail' );
 
-			if (self.options.wrapper.closest('.masonry-loader').get(0)) {
-				self.$loader = self.options.wrapper.closest('.masonry-loader');
-				self.createLoader();
-			}
+			return this;
+		},
 
-			self.options.wrapper.one('layoutComplete', function(event, laidOutItems) {
-				self.removeLoader();
-			});
+		events: function() {
+			var _self = this;
 
-			self.options.wrapper.waitForImages(function() {
-				self.options.wrapper.isotope(self.options);
-			});
+			this.$body.find( '[data-lock-screen="true"]' ).on( 'click', function( e ) {
+				e.preventDefault();
 
-			setTimeout(function() {
-				self.removeLoader();
-			}, 3000);
-
-			$window.afterResize(function(){
-				self.options.wrapper.isotope('layout');
+				_self.show();
 			});
 
 			return this;
 		},
 
-		createLoader: function() {
-			var self = this;
+		formEvents: function( $form ) {
+			var _self = this;
 
-			var loaderTemplate = [
-				'<div class="bounce-loader">',
-					'<div class="bounce1"></div>',
-					'<div class="bounce2"></div>',
-					'<div class="bounce3"></div>',
-				'</div>'
-			].join('');
+			$form.on( 'submit', function( e ) {
+				e.preventDefault();
 
-			self.$loader.append(loaderTemplate);
-
-			return this;
-		},
-
-		removeLoader: function() {
-
-			var self = this;
-
-			if (self.$loader) {
-
-				self.$loader.removeClass('masonry-loader-showing');
-
-				setTimeout(function() {
-					self.$loader.addClass('masonry-loader-loaded');
-				}, 300);
-
-			}
-
-		}
-	};
-
-	// expose to scope
-	$.extend(theme, {
-		PluginMasonry: PluginMasonry
-	});
-
-	// jquery plugin
-	$.fn.themePluginMasonry = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginMasonry($this, opts);
-			}
-
-		});
-	}
-
-}).apply(this, [window.theme, jQuery]);
-
-// Match Height
-(function(theme, $) {
-
-	'use strict';
-
-	theme = theme || {};
-
-	var instanceName = '__matchHeight';
-
-	var PluginMatchHeight = function($el, opts) {
-		return this.initialize($el, opts);
-	};
-
-	PluginMatchHeight.defaults = {
-		byRow: true,
-		property: 'height',
-		target: null,
-		remove: false
-	};
-
-	PluginMatchHeight.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
-
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginMatchHeight.defaults, opts, {
-				wrapper: this.$el
+				_self.hide();
 			});
-
-			return this;
 		},
 
-		build: function() {
-			if (!($.isFunction($.fn.matchHeight))) {
-				return this;
-			}
-
-			var self = this;
-
-			self.options.wrapper.matchHeight(self.options);
-
-			return this;
-		}
-
-	};
-
-	// expose to scope
-	$.extend(theme, {
-		PluginMatchHeight: PluginMatchHeight
-	});
-
-	// jquery plugin
-	$.fn.themePluginMatchHeight = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginMatchHeight($this, opts);
-			}
-
-		});
-	}
-
-}).apply(this, [window.theme, jQuery]);
-
-// Parallax
-(function(theme, $) {
-
-	'use strict';
-
-	theme = theme || {};
-
-	var instanceName = '__parallax';
-
-	var PluginParallax = function($el, opts) {
-		return this.initialize($el, opts);
-	};
-
-	PluginParallax.defaults = {
-		speed: 1.5,
-		horizontalPosition: '50%',
-		offset: 0,
-		responsiveOffset: false,
-		parallaxHeight: '180%'
-	};
-
-	PluginParallax.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
-
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginParallax.defaults, opts, {
-				wrapper: this.$el
-			});
-
-			return this;
-		},
-
-		build: function() {
-			var self = this,
-				$window = $(window),
-				offset,
-				optOffset,
-				yPos,
-				plxPos,
-				bgpos,
-				background;
-
-			// Create Parallax Element
-			background = $('<div class="parallax-background"></div>');
-
-			// Set Style for Parallax Element
-			background.css({
-				'background-image' : 'url(' + self.options.wrapper.data('image-src') + ')',
-				'background-size' : 'cover',
-				'background-position' : 'center',
-				'position' : 'absolute',
-				'top' : 0,
-				'left' : 0,
-				'width' : '100%',
-				'height' : (!$.browser.mobile) ? self.options.parallaxHeight : '100%'
-			});
-
-			// Add Parallax Element on DOM
-			self.options.wrapper.prepend(background);
-
-			// Set Overlfow Hidden / Position Relative / Min height to Parallax Wrapper
-			self.options.wrapper.css({
-				'position' : 'relative',
-				'overflow' : 'hidden',
-				'min-height': (self.options.minHeight) ? self.options.minHeight : ''
-			});
-
-			// Parallax Effect on Scroll & Resize
-			var parallaxEffectOnScrolResize = function() {
-				// Offset
-				optOffset = self.options.offset;
-
-				$window.on('scroll resize', function() {
-					
-					// Responsive Offset
-					if( self.options.responsiveOffset ) {
-						var window_w = $window.width(),
-							responsiveOffset = self.options.responsiveOffset;
-
-						if( responsiveOffset.constructor === Array ) {
-							if( window_w > 1199 ) {
-								optOffset = responsiveOffset[2];
-							} else if( window_w > 991 ) {
-								optOffset = responsiveOffset[1];
-							} else if( window_w > 767 ) {
-								optOffset = responsiveOffset[0];
-							}
-						}
-					}
-
-					offset  = self.options.wrapper.offset();
-					yPos    = -($window.scrollTop() - (offset.top - 100)) / ((self.options.speed + 2 ));
-					plxPos  = (yPos < 0) ? Math.abs(yPos) : -Math.abs(yPos);
-					background.css({
-						'transform' : 'translate3d(0, '+ ( (plxPos - 50) + (optOffset) ) +'px, 0)',
-						'background-position-x' : self.options.horizontalPosition
-					});
-					
-				});
-
-				$window.trigger('scroll');
-			}
-
-			if (!$.browser.mobile) {
-				parallaxEffectOnScrolResize();
-			} else {
-				if( self.options.enableOnMobile == true ) {
-					parallaxEffectOnScrolResize();
-				} else {
-					self.options.wrapper.addClass('parallax-disabled');
-				}
-			}
-
-			return this;
-		}
-	};
-
-	// expose to scope
-	$.extend(theme, {
-		PluginParallax: PluginParallax
-	});
-
-	// jquery plugin
-	$.fn.themePluginParallax = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginParallax($this, opts);
-			}
-
-		});
-	}
-
-}).apply(this, [window.theme, jQuery]);
-
-// Progress Bar
-(function(theme, $) {
-
-	'use strict';
-
-	theme = theme || {};
-
-	var instanceName = '__progressBar';
-
-	var PluginProgressBar = function($el, opts) {
-		return this.initialize($el, opts);
-	};
-
-	PluginProgressBar.defaults = {
-		accX: 0,
-		accY: -50,
-		delay: 1
-	};
-
-	PluginProgressBar.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
-
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginProgressBar.defaults, opts, {
-				wrapper: this.$el
-			});
-
-			return this;
-		},
-
-		build: function() {
-			if (!($.isFunction($.fn.appear))) {
-				return this;
-			}
-
-			var self = this,
-				$el = this.options.wrapper,
-				delay = 1;
-
-			$el.appear(function() {
-
-				delay = ($el.attr('data-appear-animation-delay') ? $el.attr('data-appear-animation-delay') : self.options.delay);
-
-				$el.addClass($el.attr('data-appear-animation'));
-
-				setTimeout(function() {
-
-					$el.animate({
-						width: $el.attr('data-appear-progress-animation')
-					}, 1500, 'easeOutQuad', function() {
-						$el.find('.progress-bar-tooltip').animate({
-							opacity: 1
-						}, 500, 'easeOutQuad');
-					});
-
-				}, delay);
-
-			}, {
-				accX: self.options.accX,
-				accY: self.options.accY
-			});
-
-			return this;
-		}
-	};
-
-	// expose to scope
-	$.extend(theme, {
-		PluginProgressBar: PluginProgressBar
-	});
-
-	// jquery plugin
-	$.fn.themePluginProgressBar = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginProgressBar($this, opts);
-			}
-
-		});
-	}
-
-}).apply(this, [window.theme, jQuery]);
-
-// Rmove Min Height Adter Load
-(function(theme, $) {
-
-	'use strict';
-
-	theme = theme || {};
-
-	var instanceName = '__removeMinHeight';
-
-	var PluginRemoveMinHeight = function($el, opts) {
-		return this.initialize($el, opts);
-	};
-
-	PluginRemoveMinHeight.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
-
-			this
-				.setData()
-				.build();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		build: function() {
-			var self = this;
-
-			$(window).on('load', function(){
-				self.$el.css('min-height', 0);
-			});
-
-			return this;
-		}
-	};
-
-	// expose to scope
-	$.extend(theme, {
-		PluginRemoveMinHeight: PluginRemoveMinHeight
-	});
-
-	// jquery plugin
-	$.fn.themePluginRemoveMinHeight = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginRemoveMinHeight($this, opts);
-			}
-
-		});
-	}
-
-}).apply(this, [window.theme, jQuery]);
-
-// Revolution Slider
-(function(theme, $) {
-
-	'use strict';
-
-	theme = theme || {};
-
-	var instanceName = '__revolution';
-
-	var PluginRevolutionSlider = function($el, opts) {
-		return this.initialize($el, opts);
-	};
-
-	PluginRevolutionSlider.defaults = {
-		sliderType: 'standard',
-		sliderLayout: 'fullwidth',
-		delay: 9000,
-		gridwidth: 1170,
-		gridheight: 500,
-		spinner: 'spinner3',
-		disableProgressBar: 'on',
-		parallax: {
-			type: 'off',
-			bgparallax: 'off'
-		},
-		navigation: {
-			keyboardNavigation: 'off',
-			keyboard_direction: 'horizontal',
-			mouseScrollNavigation: 'off',
-			onHoverStop: 'off',
-			touch: {
-				touchenabled: 'on',
-				swipe_threshold: 75,
-				swipe_min_touches: 1,
-				swipe_direction: 'horizontal',
-				drag_block_vertical: false
-			},
-			arrows: {
-				enable: true,
-				hide_onmobile: false,
-				hide_under: 0,
-				hide_onleave: true,
-				hide_delay: 200,
-				hide_delay_mobile: 1200,
-				left: {
-					h_align: 'left',
-					v_align: 'center',
-					h_offset: 30,
-					v_offset: 0
+		show: function() {
+			var _self = this,
+				userinfo = this.getUserInfo();
+
+			this.$userPicture.attr( 'src', userinfo.picture );
+			this.$userName.text( userinfo.username );
+			this.$userEmail.text( userinfo.email );
+
+			this.$body.addClass( 'show-lock-screen' );
+
+			$.magnificPopup.open({
+				items: {
+					src: this.lockHTML,
+					type: 'inline'
 				},
-				right: {
-					h_align: 'right',
-					v_align: 'center',
-					h_offset: 30,
-					v_offset: 0
+				modal: true,
+				mainClass: 'mfp-lock-screen',
+				callbacks: {
+					change: function() {
+						_self.formEvents( this.content.find( 'form' ) );
+					}
 				}
-			}
+			});
+		},
+
+		hide: function() {
+			$.magnificPopup.close();
+		},
+
+		getUserInfo: function() {
+			var $info,
+				picture,
+				name,
+				email;
+
+			// always search in case something is changed through ajax
+			$info    = $( '#userbox' );
+			picture  = $info.find( '.profile-picture img' ).attr( 'data-lock-picture' );
+			name     = $info.find( '.profile-info' ).attr( 'data-lock-name' );
+			email    = $info.find( '.profile-info' ).attr( 'data-lock-email' );
+
+			return {
+				picture: picture,
+				username: name,
+				email: email
+			};
+		},
+
+		buildTemplate: function( userinfo ) {
+			return [
+					'<section id="LockScreenInline" class="body-sign body-locked body-locked-inline">',
+						'<div class="center-sign">',
+							'<div class="panel card-sign">',
+								'<div class="card-body">',
+									'<form>',
+										'<div class="current-user text-center">',
+											'<img id="LockUserPicture" src="{{picture}}" alt="John Doe" class="rounded-circle user-image" />',
+											'<h2 id="LockUserName" class="user-name text-dark m-0">{{username}}</h2>',
+											'<p  id="LockUserEmail" class="user-email m-0">{{email}}</p>',
+										'</div>',
+										'<div class="form-group mb-lg">',
+											'<div class="input-group">',
+												'<input id="pwd" name="pwd" type="password" class="form-control form-control-lg" placeholder="Password" />',
+												'<span class="input-group-append">',
+													'<span class="input-group-text">',
+														'<i class="fas fa-lock"></i>',
+													'</span>',
+												'</span>',
+											'</div>',
+										'</div>',
+
+										'<div class="row">',
+											'<div class="col-6">',
+												'<p class="mt-xs mb-0">',
+													'<a href="#">Not John Doe?</a>',
+												'</p>',
+											'</div>',
+											'<div class="col-6">',
+												'<button type="submit" class="btn btn-primary pull-right">Unlock</button>',
+											'</div>',
+										'</div>',
+									'</form>',
+								'</div>',
+							'</div>',
+						'</div>',
+					'</section>'
+				]
+				.join( '' )
+				.replace( /\{\{picture\}\}/, userinfo.picture )
+				.replace( /\{\{username\}\}/, userinfo.username )
+				.replace( /\{\{email\}\}/, userinfo.email );
+		}
+
+	};
+
+	this.LockScreen = LockScreen;
+
+	$(function() {
+		LockScreen.initialize();
+	});
+
+}).apply(this, [jQuery]);
+
+// Map Builder
+(function( theme, $ ) {
+
+	'use strict';
+
+	// prevent undefined var
+	theme = theme || {};
+
+	// internal var to check if reached limit
+	var timeouts = 0;
+
+	// instance
+	var instanceName = '__gmapbuilder';
+
+	// private
+	var roundNumber = function( number, precision ) {
+		if( precision < 0 ) {
+			precision = 0;
+		} else if( precision > 10 ) {
+			precision = 10;
+		}
+		var a = [ 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000 ];
+
+		return Math.round( number * a[ precision ] ) / a[ precision ];
+	};
+
+	// definition
+	var GMapBuilder = function( $wrapper, opts ) {
+		return this.initialize( $wrapper, opts );
+	};
+
+	GMapBuilder.defaults = {
+		mapSelector: '#gmap',
+
+		markers: {
+			modal: '#MarkerModal',
+			list: '#MarkersList',
+			removeAll: '#MarkerRemoveAll'
+		},
+
+		previewModal: '#ModalPreview',
+		getCodeModal: '#ModalGetCode',
+
+		mapOptions: {
+			center: {
+				lat: -38.908133,
+				lng: -13.692628
+			},
+			panControl: true,
+			zoom: 3
 		}
 	};
 
-	PluginRevolutionSlider.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
+	GMapBuilder.prototype = {
 
-			this.$el = $el;
+		markers: [],
+
+		initialize: function( $wrapper, opts ) {
+			this.$wrapper = $wrapper;
 
 			this
 				.setData()
-				.setOptions(opts)
+				.setOptions( opts )
+				.setVars()
 				.build()
 				.events();
 
@@ -2430,35 +1546,961 @@ Theme Version:	1.1.0
 		},
 
 		setData: function() {
+			this.$wrapper.data( instanceName, this );
+
+			return this;
+		},
+
+		setOptions: function( opts ) {
+			this.options = $.extend( true, {}, GMapBuilder.defaults, opts );
+
+			return this;
+		},
+
+		setVars: function() {
+			this.$mapContainer		= this.$wrapper.find( this.options.mapSelector );
+
+			this.$previewModal		= $( this.options.previewModal );
+			this.$getCodeModal		= $( this.options.getCodeModal );
+
+			this.marker				= {};
+			this.marker.$modal  	= $( this.options.markers.modal );
+			this.marker.$form		= this.marker.$modal.find( 'form' );
+			this.marker.$list		= $( this.options.markers.list );
+			this.marker.$removeAll	= $( this.options.markers.removeAll );
+
+			return this;
+		},
+
+		build: function() {
+			var _self = this;
+
+			if ( !!window.SnazzyThemes ) {
+				var themeOpts = [];
+
+				$.each( window.SnazzyThemes, function( i, theme ) {
+					themeOpts.push( $('<option value="' + theme.id + '">' + theme.name + '</option>').data( 'json', theme.json ) );
+				});
+
+				this.$wrapper.find( '[data-builder-field="maptheme"]' ).append( themeOpts );
+			}
+
+			this.geocoder = new google.maps.Geocoder();
+
+			google.maps.event.addDomListener( window, 'load', function() {
+				_self.options.mapOptions.center = new google.maps.LatLng( _self.options.mapOptions.center.lat, _self.options.mapOptions.center.lng );
+
+				_self.map = new google.maps.Map( _self.$mapContainer.get(0), _self.options.mapOptions );
+
+				_self
+					.updateControl( 'latlng' )
+					.updateControl( 'zoomlevel' );
+
+				_self.mapEvents();
+			});
+
+			return this;
+		},
+
+		events: function() {
+			var _self = this;
+
+			this.$wrapper.find( '[data-builder-field]' ).each(function() {
+				var $this = $( this ),
+					field,
+					value;
+
+				field = $this.data( 'builder-field' );
+
+				$this.on( 'change', function() {
+
+					if ( $this.is( 'select' ) ) {
+						value = $this.children( 'option:selected' ).val().toLowerCase();
+					} else {
+						value = $this.val().toLowerCase();
+					}
+
+					_self.updateMap( field, value );
+				});
+
+			});
+
+			this.marker.$form.on( 'submit', function( e ) {
+				e.preventDefault();
+
+				_self.saveMarker( _self.marker.$form.formToObject() );
+			});
+
+			this.marker.$removeAll.on( 'click', function( e ) {
+				e.preventDefault();
+				_self.removeAllMarkers();
+			});
+
+			// preview events
+			this.$previewModal.on( 'shown.bs.modal', function() {
+				_self.preview();
+			});
+
+			this.$previewModal.on( 'hidden.bs.modal', function() {
+				_self.$previewModal.find( 'iframe' ).get(0).contentWindow.document.body.innerHTML = '';
+			});
+
+			// get code events
+			this.$getCodeModal.on( 'shown.bs.modal', function() {
+				_self.getCode();
+			});
+
+			return this;
+		},
+
+		// MAP FUNCTIONS
+		// -----------------------------------------------------------------------------
+		mapEvents: function() {
+			var _self = this;
+
+			google.maps.event.addDomListener( _self.map, 'resize', function() {
+				google.maps.event.trigger( _self.map, 'resize' );
+			});
+
+			google.maps.event.addListener( this.map, 'center_changed', function() {
+				var coords = _self.map.getCenter();
+				_self.updateControl( 'latlng', {
+					lat: roundNumber( coords.lat(), 6 ),
+					lng: roundNumber( coords.lng(), 6 )
+				});
+			});
+
+			google.maps.event.addListener( this.map, 'zoom_changed', function() {
+				_self.updateControl( 'zoomlevel', _self.map.getZoom() );
+			});
+
+			google.maps.event.addListener( this.map, 'maptypeid_changed', function() {
+				_self.updateControl( 'maptype', _self.map.getMapTypeId() );
+			});
+
+			return this;
+		},
+
+		updateMap: function( prop, value ) {
+			var updateFn;
+
+			updateFn = this.updateMapProperty[ prop ];
+
+			if ( $.isFunction( updateFn ) ) {
+				updateFn.apply( this, [ value ] );
+			} else {
+				console.info( 'missing update function for', prop );
+			}
+
+			return this;
+		},
+
+		updateMapProperty: {
+
+			latlng: function() {
+				var lat,
+					lng;
+
+				lat = this.$wrapper.find('[data-builder-field][name="latitude"]').val();
+				lng = this.$wrapper.find('[data-builder-field][name="longitude"]').val();
+
+				if ( lat.length > 0 && lng.length > 0 ) {
+					this.map.setCenter( new google.maps.LatLng( lat, lng ) );
+				}
+
+				return this;
+			},
+
+			zoomlevel: function( value ) {
+				var value = arguments[ 0 ];
+
+				this.map.setZoom( parseInt( value, 10 ) );
+
+				return this;
+			},
+
+			maptypecontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				if ( value === 'false' ){
+					options.mapTypeControl = false;
+				} else {
+					options = {
+						mapTypeControl: true,
+						mapTypeControlOptions: {
+							style: google.maps.MapTypeControlStyle[ value.toUpperCase() ]
+						}
+					};
+				}
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			zoomcontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				if ( value === 'false' ){
+					options.zoomControl = false;
+				} else {
+					options = {
+						zoomControl: true,
+						zoomControlOptions: {
+							style: google.maps.ZoomControlStyle[ value.toUpperCase() ]
+						}
+					};
+				}
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			scalecontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				options.scaleControl = value !== 'false';
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			streetviewcontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				options.streetViewControl = value !== 'false';
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			pancontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				options.panControl = value !== 'false';
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			overviewcontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				if ( value === 'false' ){
+					options.overviewMapControl = false;
+				} else {
+					options = {
+						overviewMapControl: true,
+						overviewMapControlOptions: {
+							opened: value === 'opened'
+						}
+					};
+				}
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			draggablecontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				options.draggable = value !== 'false';
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			clicktozoomcontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				options.disableDoubleClickZoom = value === 'false';
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			scrollwheelcontrol: function( value ) {
+				var options;
+
+				options	= {};
+
+				options.scrollwheel = value !== 'false';
+
+				this.map.setOptions( options );
+
+				return this;
+			},
+
+			maptype: function( value ) {
+				var options,
+					mapStyles,
+					mapType;
+
+				mapStyles = this.$wrapper.find( '[data-builder-field="maptheme"]' ).children( 'option' ).filter( ':selected' ).data( 'json' );
+				mapType =  google.maps.MapTypeId[ value.toUpperCase() ];
+
+				options	= {
+					mapTypeId: mapType
+				};
+
+				if ( $.inArray( google.maps.MapTypeId[ value.toUpperCase() ], [ 'terrain', 'roadmap' ]) > -1 && !!mapStyles ) {
+					options.styles = eval( mapStyles );
+				} else {
+					options.styles = false;
+					this.updateControl( 'maptheme' );
+				}
+
+				this.map.setOptions( options );
+			},
+
+			maptheme: function( value ) {
+				var json,
+					mapType,
+					options;
+
+				mapType = google.maps.MapTypeId[ this.map.getMapTypeId() === 'terrain' ? 'TERRAIN' : 'ROADMAP' ];
+				options = {};
+				json = this.$wrapper.find( '[data-builder-field="maptheme"]' ).children( 'option' ).filter( ':selected' ).data( 'json' );
+
+				if ( !json ) {
+					options = {
+						mapTypeId: mapType,
+						styles: false
+					};
+				} else {
+					options = {
+						mapTypeId: mapType,
+						styles: eval( json )
+					};
+				}
+
+				this.map.setOptions( options );
+			}
+
+		},
+
+		// CONTROLS FUNCTIONS
+		// -----------------------------------------------------------------------------
+		updateControl: function( prop ) {
+			var updateFn;
+
+			updateFn = this.updateControlValue[ prop ];
+
+			if ( $.isFunction( updateFn ) ) {
+				updateFn.apply( this );
+			} else {
+				console.info( 'missing update function for', prop );
+			}
+
+			return this;
+		},
+
+		updateControlValue: {
+
+			latlng: function() {
+				var center = this.map.getCenter();
+
+				this.$wrapper.find('[data-builder-field][name="latitude"]').val( roundNumber( center.lat() , 6 ) );
+				this.$wrapper.find('[data-builder-field][name="longitude"]').val( roundNumber( center.lng() , 6 ) );
+			},
+
+			zoomlevel: function() {
+				var $control,
+					level;
+
+				level = this.map.getZoom();
+
+				$control = this.$wrapper.find('[data-builder-field="zoomlevel"]');
+
+				$control
+					.children( 'option[value="' + level + '"]' )
+					.prop( 'selected', true );
+
+				if ( $control.hasClass( 'select2-offscreen' ) ) {
+					$control.select2( 'val', level );
+				}
+			},
+
+			maptype: function() {
+				var $control,
+					mapType;
+
+				mapType = this.map.getMapTypeId();
+				$control = this.$wrapper.find('[data-builder-field="maptype"]');
+
+				$control
+					.children( 'option[value="' + mapType + '"]' )
+					.prop( 'selected', true );
+
+				if ( $control.hasClass( 'select2-offscreen' ) ) {
+					$control.select2( 'val', mapType );
+				}
+			},
+
+			maptheme: function() {
+				var $control;
+
+				$control = this.$wrapper.find('[data-builder-field="maptheme"]');
+
+				$control
+					.children( 'option[value="false"]' )
+					.prop( 'selected', true );
+
+				if ( $control.hasClass( 'select2-offscreen' ) ) {
+					$control.select2( 'val', 'false' );
+				}
+			}
+
+		},
+
+		// MARKERS FUNCTIONS
+		// -----------------------------------------------------------------------------
+		editMarker: function( marker ) {
+			this.currentMarker = marker;
+
+			this.marker.$form
+				.find( '#MarkerLocation' ).val( marker.location );
+
+			this.marker.$form
+				.find( '#MarkerTitle' ).val( marker.title );
+
+			this.marker.$form
+				.find( '#MarkerDescription' ).val( marker.description );
+
+			this.marker.$modal.modal( 'show' );
+		},
+
+		removeMarker: function( marker ) {
+			var i;
+
+			marker._instance.setMap( null );
+			marker._$html.remove();
+
+			for( i = 0; i < this.markers.length; i++ ) {
+				if ( marker === this.markers[ i ] ) {
+					this.markers.splice( i, 1 );
+					break;
+				}
+			}
+
+			if ( this.markers.length === 0 ) {
+				this.marker.$list.addClass( 'hidden' );
+			}
+		},
+
+		saveMarker: function( marker ) {
+			this._geocode( marker );
+		},
+
+		removeAllMarkers: function() {
+			var i = 0,
+				l,
+				marker;
+
+			l = this.markers.length;
+
+			for( ; i < l; i++ ) {
+				marker = this.markers[ i ];
+
+				marker._instance.setMap( null );
+				marker._$html.remove();
+			}
+
+			this.markers = [];
+			this.marker.$list.addClass( 'hidden' );
+		},
+
+		_geocode: function( marker ) {
+			var _self = this,
+				status;
+
+			this.geocoder.geocode({ address: marker.location }, function( response, status ) {
+				_self._onGeocodeResult( marker, response, status );
+			});
+		},
+
+		_onGeocodeResult: function( marker, response, status ) {
+			var result;
+
+			if ( !response || status !== google.maps.GeocoderStatus.OK ) {
+				if ( status == google.maps.GeocoderStatus.ZERO_RESULTS ) {
+					// show notification
+				} else {
+					timeouts++;
+					if ( timeouts > 3 ) {
+						// show notification reached limit of requests
+					}
+				}
+			} else {
+				timeouts = 0;
+
+				if ( this.currentMarker ) {
+					this.removeMarker( this.currentMarker );
+					this.currentMarker = null;
+				}
+
+				// grab first result of the list
+				result = response[ 0 ];
+
+				// get lat & lng and set to marker
+				marker.lat = Math.round( result.geometry.location.lat() * 1000000 ) / 1000000;
+				marker.lng = Math.round( result.geometry.location.lng() * 1000000 ) / 1000000;
+
+				var opts = {
+					position: new google.maps.LatLng( marker.lat, marker.lng ),
+					map: this.map
+				};
+
+				if ( marker.title.length > 0 ) {
+					opts.title = marker.title;
+				}
+
+				if ( marker.description.length > 0 ) {
+					opts.desc = marker.description;
+				}
+
+				marker.position = opts.position;
+				marker._instance = new google.maps.Marker( opts );
+
+				if ( !!marker.title || !!marker.description  ) {
+					this._bindMarkerClick( marker );
+				}
+
+				this.markers.push( marker );
+
+				// append to markers list
+				this._appendMarkerToList( marker );
+
+				// hide modal and reset form
+				this.marker.$form.get(0).reset();
+				this.marker.$modal.modal( 'hide' );
+			}
+		},
+
+		_appendMarkerToList: function( marker ) {
+			var _self = this,
+				html;
+
+			html = [
+				'<li>',
+					'<p>{location}</p>',
+					'<a href="#" class="location-action location-center"><i class="fas fa-map-marker-alt"></i></a>',
+					'<a href="#" class="location-action location-edit"><i class="fas fa-edit"></i></a>',
+					'<a href="#" class="location-action location-remove text-danger"><i class="fas fa-times"></i></a>',
+				'</li>'
+			].join('');
+
+			html = html.replace( /\{location\}/, !!marker.title ? marker.title : marker.location );
+
+			marker._$html = $( html );
+
+			// events
+			marker._$html.find( '.location-center' )
+				.on( 'click', function( e ) {
+					_self.map.setCenter( marker.position );
+				});
+
+			marker._$html.find( '.location-remove' )
+				.on( 'click', function( e ) {
+					e.preventDefault();
+					_self.removeMarker( marker );
+				});
+
+			marker._$html.find( '.location-edit' )
+				.on( 'click', function( e ) {
+					e.preventDefault();
+					_self.editMarker( marker );
+				});
+
+			this.marker.$list
+				.append( marker._$html )
+				.removeClass( 'hidden' );
+		},
+
+		_bindMarkerClick: function( marker ) {
+			var _self = this,
+				html;
+
+			html = [
+				'<div style="background-color: #FFF; color: #000; padding: 5px; width: 150px;">',
+					'{title}',
+					'{description}',
+				'</div>'
+			].join('');
+
+			html = html.replace(/\{title\}/, !!marker.title ?  ("<h4>" + marker.title + "</h4>") : "" );
+			html = html.replace(/\{description\}/, !!marker.description ?  ("<p>" + marker.description + "</p>") : "" );
+
+			marker._infoWindow = new google.maps.InfoWindow({ content: html });
+
+			google.maps.event.addListener( marker._instance, 'click', function() {
+
+				if ( marker._infoWindow.isOpened ) {
+					marker._infoWindow.close();
+					marker._infoWindow.isOpened = false;
+				} else {
+					marker._infoWindow.open( _self.map, this );
+					marker._infoWindow.isOpened = true;
+				}
+
+			});
+		},
+
+		preview: function() {
+			var customScript,
+				googleScript,
+				iframe,
+				previewHtml;
+
+			previewHtml = [
+				'<style>',
+					'html, body { margin: 0; padding: 0; }',
+				'</style>',
+				'<div id="' + this.$wrapper.find('[data-builder-field="mapid"]').val() + '" style="width: 100%; height: 100%;"></div>'
+			];
+
+			iframe = this.$previewModal.find( 'iframe' ).get(0).contentWindow.document;
+
+			iframe.body.innerHTML = previewHtml.join('');
+
+			customScript = iframe.createElement( 'script' );
+			customScript.type = 'text/javascript';
+			customScript.text = "window.initialize = function() { " + this.generate() + " init(); }; ";
+			iframe.body.appendChild( customScript );
+
+			googleScript = iframe.createElement( 'script' );
+			googleScript.type = 'text/javascript';
+			googleScript.text = 'function loadScript() { var script = document.createElement("script"); script.type = "text/javascript"; script.src = "//maps.googleapis.com/maps/api/js?key=&sensor=&callback=initialize"; document.body.appendChild(script); } loadScript()';
+			iframe.body.appendChild( googleScript );
+		},
+
+		getCode: function() {
+			this.$getCodeModal.find('.modal-body pre').html( this.generate().replace( /</g, '&lt;' ).replace( />/g, '&gt;' ) );
+		},
+
+		// GENERATE CODE
+		// -----------------------------------------------------------------------------
+		generate: function() {
+			var i,
+				work;
+
+			var output = [
+				'    google.maps.event.addDomListener(window, "load", init);',
+				'    var map;',
+				'    function init() {',
+				'        var mapOptions = {',
+				'            center: new google.maps.LatLng({lat}, {lng}),',
+				'            zoom: {zoom},',
+				'            zoomControl: {zoomControl},',
+				'            {zoomControlOptions}',
+				'            disableDoubleClickZoom: {disableDoubleClickZoom},',
+				'            mapTypeControl: {mapTypeControl},',
+				'            {mapTypeControlOptions}',
+				'            scaleControl: {scaleControl},',
+				'            scrollwheel: {scrollwheel},',
+				'            panControl: {panControl},',
+				'            streetViewControl: {streetViewControl},',
+				'            draggable : {draggable},',
+				'            overviewMapControl: {overviewMapControl},',
+				'            {overviewMapControlOptions}',
+				'            mapTypeId: google.maps.MapTypeId.{mapTypeId}{styles}',
+				'        };',
+				'',
+				'        var mapElement = document.getElementById("{mapid}");',
+				'        var map = new google.maps.Map(mapElement, mapOptions);',
+				'        {locations}',
+				'    }'
+			];
+
+			output = output.join("\r\n");
+
+			var zoomControl			= this.$wrapper.find('[data-builder-field="zoomcontrol"] option:selected').val() !== 'false';
+			var mapTypeControl		= this.$wrapper.find('[data-builder-field="maptypecontrol"] option:selected').val() !== 'false';
+			var overviewMapControl	= this.$wrapper.find('[data-builder-field="overviewcontrol"] option:selected').val().toLowerCase();
+			var $themeControl		= this.$wrapper.find('[data-builder-field="maptheme"] option:selected').filter( ':selected' );
+
+			output = output
+						.replace( /\{mapid\}/, this.$wrapper.find('[data-builder-field="mapid"]').val() )
+						.replace( /\{lat\}/, this.$wrapper.find('[data-builder-field][name="latitude"]').val() )
+						.replace( /\{lng\}/, this.$wrapper.find('[data-builder-field][name="longitude"]').val() )
+						.replace( /\{zoom\}/, this.$wrapper.find('[data-builder-field="zoomlevel"] option:selected').val() )
+						.replace( /\{zoomControl\}/, zoomControl )
+						.replace( /\{disableDoubleClickZoom\}/, this.$wrapper.find('[data-builder-field="clicktozoomcontrol"] option:selected').val() === 'false' )
+						.replace( /\{mapTypeControl\}/, mapTypeControl )
+						.replace( /\{scaleControl\}/, this.$wrapper.find('[data-builder-field="scalecontrol"] option:selected').val() !== 'false' )
+						.replace( /\{scrollwheel\}/, this.$wrapper.find('[data-builder-field="scrollwheelcontrol"] option:selected').val() !== 'false' )
+						.replace( /\{panControl\}/, this.$wrapper.find('[data-builder-field="pancontrol"] option:selected').val() !== 'false' )
+						.replace( /\{streetViewControl\}/, this.$wrapper.find('[data-builder-field="streetviewcontrol"] option:selected').val() !== 'false' )
+						.replace( /\{draggable\}/, this.$wrapper.find('[data-builder-field="draggablecontrol"] option:selected').val() !== 'false' )
+						.replace( /\{overviewMapControl\}/, overviewMapControl !== 'false' )
+						.replace( /\{mapTypeId\}/, this.$wrapper.find('[data-builder-field="maptype"] option:selected').val().toUpperCase() );
+
+			if ( zoomControl ) {
+				work = {
+					zoomControlOptions: {
+						style: this.$wrapper.find('[data-builder-field="maptypecontrol"] option:selected').val().toUpperCase()
+					}
+				};
+				output = output.replace( /\{zoomControlOptions\}/, "zoomControlOptions: {\r\n                style: google.maps.ZoomControlStyle." + this.$wrapper.find('[data-builder-field="zoomcontrol"] option:selected').val().toUpperCase() + "\r\n\            },");
+			} else {
+				output = output.replace( /\{zoomControlOptions\}/, '' );
+			}
+
+			if ( mapTypeControl ) {
+				work = {
+					zoomControlOptions: {
+						style: this.$wrapper.find('[data-builder-field="maptypecontrol"] option:selected').val().toUpperCase()
+					}
+				};
+				output = output.replace( /\{mapTypeControlOptions\}/, "mapTypeControlOptions: {\r\n                style: google.maps.MapTypeControlStyle." + this.$wrapper.find('[data-builder-field="maptypecontrol"] option:selected').val().toUpperCase() + "\r\n\            },");
+			} else {
+				output = output.replace( /\{mapTypeControlOptions\}/, '' );
+			}
+
+			if ( overviewMapControl !== 'false' ) {
+				output = output.replace( /\{overviewMapControlOptions\}/, "overviewMapControlOptions: {\r\n                opened: " + (overviewMapControl === 'opened') + "\r\n\            },");
+			} else {
+				output = output.replace( /\{overviewMapControlOptions\}/, '' );
+			}
+
+			if ( $themeControl.val() !== 'false' ) {
+				output = output.replace( /\{styles\}/, ',\r\n            styles: ' + $themeControl.data( 'json' ).replace(/\r\n/g, '') );
+			} else {
+				output = output.replace( /\{styles\}/, '' );
+			}
+
+			if ( this.markers.length > 0 ) {
+				var work = [ 'var locations = [' ];
+				var m,
+					object;
+
+				for( i = 0; i < this.markers.length; i++ ) {
+					m = this.markers[ i ];
+					object = '';
+
+					object += '            { lat: ' + m.lat + ', lng: ' + m.lng;
+
+					if ( !!m.title ) {
+						object += ', title: "' + m.title + '"';
+					}
+
+					if ( !!m.description ) {
+						object += ', description: "' + m.description + '"';
+					}
+
+					object += ' }';
+
+					if ( i + 1 < this.markers.length ) {
+						object += ',';
+					}
+
+					work.push( object );
+				}
+
+				work.push( '        ];\r\n' )
+
+				work.push( '        var opts = {};' )
+				work.push( '        for (var i = 0; i < locations.length; i++) {' );
+				work.push( '            opts.position = new google.maps.LatLng( locations[ i ].lat, locations[ i ].lng );' );
+				work.push( '            opts.map = map;' );
+				work.push( '            if ( !!locations[ i ] .title ) { opts.title = locations[ i ].title; }');
+				work.push( '            if ( !!locations[ i ] .description ) { opts.description = locations[ i ].description; }');
+				work.push( '            marker = new google.maps.Marker( opts );' );
+				work.push( '' );
+				work.push( '            (function() {' );
+				work.push( '                var html = [' );
+				work.push( '                	\'<div style="background-color: #FFF; color: #000; padding: 5px; width: 150px;">\',' );
+				work.push( '                		\'{title}\',' );
+				work.push( '                		\'{description}\',' );
+				work.push( '                	\'</div>\'' );
+				work.push( '                ].join(\'\');' );
+
+				work.push( '' );
+				work.push( '                html = html.replace(/\{title\}/, !!opts.title ?  ("<h4>" + opts.title + "</h4>") : "" );' );
+				work.push( '                html = html.replace(/\{description\}/, !!opts.description ?  ("<p>" + opts.description + "</p>") : "" );' );
+
+				work.push( '                var infoWindow = new google.maps.InfoWindow({ content: html });' );
+
+				work.push( '                google.maps.event.addListener( marker, \'click\', function() {' );
+				work.push( '                	if ( infoWindow.isOpened ) {' );
+				work.push( '                		infoWindow.close();' );
+				work.push( '                		infoWindow.isOpened = false;' );
+				work.push( '                	} else {' );
+				work.push( '                		infoWindow.open( map, this );' );
+				work.push( '                		infoWindow.isOpened = true;' );
+				work.push( '                	}' );
+				work.push( '                });' );
+				work.push( '            })();' )
+				work.push( '        }');
+
+				output = output.replace( /\{locations\}/, work.join('\r\n') );
+			} else {
+				output = output.replace( /\{locations\}/, '' );
+			}
+
+			console.log( output );
+
+			return output;
+		}
+	};
+
+	// expose
+	$.extend( true, theme, {
+		Maps: {
+			GMapBuilder: GMapBuilder
+		}
+	});
+
+	// jQuery plugin
+	$.fn.themeGMapBuilder = function( opts ) {
+		return this.map(function() {
+			var $this = $( this ),
+				instance;
+
+			instance = $this.data( instanceName );
+
+			if ( instance ) {
+				return instance;
+			} else {
+				return (new GMapBuilder( $this, opts ));
+			}
+		});
+	};
+
+	// auto initialize
+	$(function() {
+		$('[data-theme-gmap-builder]').each(function() {
+			var $this = $( this );
+
+			window.builder = $this.themeGMapBuilder();
+		});
+	});
+
+}).apply(this, [window.theme, jQuery]);
+
+// Markdown
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__markdownEditor';
+
+	var PluginMarkdownEditor = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginMarkdownEditor.defaults = {
+		iconlibrary: 'fa',
+		buttons: [
+			[{
+				data: [{
+					icon: {
+						fa: 'fa fa-bold'
+					}
+				}, {
+					icon: {
+						fa: 'fa fa-italic'
+					}
+				}, {
+					icon: {
+						fa: 'fa fa-heading'
+					}
+				}]
+			}, {
+				data: [{
+					icon: {
+						fa: 'fa fa-link'
+					}
+				}, {
+					icon: {
+						fa: 'fa fa-image'
+					}
+				}]
+			}, {
+				data: [{
+						icon: {
+							fa: 'fa fa-list'
+						}
+					},
+					{
+						icon: {
+							fa: 'fa fa-list-ol'
+						}
+					},
+					{
+						icon: {
+							fa: 'fa fa-code'
+						}
+					},
+					{
+						icon: {
+							fa: 'fa fa-quote-left'
+						}
+					}
+				]
+			}, {
+				data: [{
+					icon: {
+						fa: 'fa fa-search'
+					}
+				}]
+			}]
+		]
+	};
+
+	PluginMarkdownEditor.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
 			this.$el.data(instanceName, this);
 
 			return this;
 		},
 
 		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginRevolutionSlider.defaults, opts, {
-				wrapper: this.$el
-			});
+			this.options = $.extend( true, {}, PluginMarkdownEditor.defaults, opts );
 
 			return this;
 		},
 
 		build: function() {
-			if (!($.isFunction($.fn.revolution))) {
-				return this;
-			}
-
-			// Single Slider Class
-			if(this.options.wrapper.find('> ul > li').length == 1) {
-				this.options.wrapper.addClass('slider-single-slide');
-			}
-
-			this.options.wrapper.revolution(this.options);
-
-			return this;
-		},
-
-		events: function() {
+			this.$el.markdown( this.options );
 
 			return this;
 		}
@@ -2466,18 +2508,473 @@ Theme Version:	1.1.0
 
 	// expose to scope
 	$.extend(theme, {
-		PluginRevolutionSlider: PluginRevolutionSlider
+		PluginMarkdownEditor: PluginMarkdownEditor
 	});
 
 	// jquery plugin
-	$.fn.themePluginRevolutionSlider = function(opts) {
+	$.fn.themePluginMarkdownEditor = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginMarkdownEditor($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// Masked Input
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__maskedInput';
+
+	var PluginMaskedInput = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginMaskedInput.defaults = {
+	};
+
+	PluginMaskedInput.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, PluginMaskedInput.defaults, opts );
+
+			return this;
+		},
+
+		build: function() {
+			this.$el.mask( this.$el.data('input-mask'), this.options );
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginMaskedInput: PluginMaskedInput
+	});
+
+	// jquery plugin
+	$.fn.themePluginMaskedInput = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginMaskedInput($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// MaxLength
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__maxlength';
+
+	var PluginMaxLength = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginMaxLength.defaults = {
+		alwaysShow: true,
+		placement: 'bottom-left',
+		warningClass: 'badge badge-success bottom-left',
+		limitReachedClass: 'badge badge-danger bottom-left'
+	};
+
+	PluginMaxLength.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, PluginMaxLength.defaults, opts );
+
+			return this;
+		},
+
+		build: function() {
+			this.$el.maxlength( this.options );
+
+			this.$el.on('blur', function() {
+				$('.bootstrap-maxlength').remove();
+			});
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginMaxLength: PluginMaxLength
+	});
+
+	// jquery plugin
+	$.fn.themePluginMaxLength = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginMaxLength($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// MultiSelect
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__multiselect';
+
+	var PluginMultiSelect = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginMultiSelect.defaults = {
+		templates: {
+			li: '<li><a class="dropdown-item" tabindex="0"><label style="display: block;"></label></a></li>',
+			filter: '<div class="input-group"><span class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></span><input class="form-control multiselect-search" type="text"></div>'
+		}
+	};
+
+	PluginMultiSelect.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, PluginMultiSelect.defaults, opts );
+
+			return this;
+		},
+
+		build: function() {
+			this.$el.multiselect( this.options );
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginMultiSelect: PluginMultiSelect
+	});
+
+	// jquery plugin
+	$.fn.themePluginMultiSelect = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginMultiSelect($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// Notifications - Config
+(function($) {
+
+	'use strict';
+
+	// use font awesome icons if available
+	if ( typeof PNotify != 'undefined' ) {
+		PNotify.prototype.options.styling = "fontawesome";
+
+		$.extend(true, PNotify.prototype.options, {
+			shadow: false,
+			stack: {
+				spacing1: 15,
+	        	spacing2: 15
+        	}
+		});
+
+		$.extend(PNotify.styling.fontawesome, {
+			// classes
+			container: "notification",
+			notice: "notification-warning",
+			info: "notification-info",
+			success: "notification-success",
+			error: "notification-danger",
+
+			// icons
+			notice_icon: "fas fa-exclamation",
+			info_icon: "fas fa-info",
+			success_icon: "fas fa-check",
+			error_icon: "fas fa-times"
+		});
+	}
+
+}).apply(this, [jQuery]);
+
+// Portlets
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__portlet',
+		storageOrderKey = '__portletOrder',
+		storageStateKey = '__portletState';
+
+	var PluginPortlet = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginPortlet.defaults = {
+		connectWith: '[data-plugin-portlet]',
+		items: '[data-portlet-item]',
+		handle: '.portlet-handler',
+		opacity: 0.7,
+		placeholder: 'portlet-placeholder',
+		cancel: 'portlet-cancel',
+		forcePlaceholderSize: true,
+		forceHelperSize: true,
+		tolerance: 'pointer',
+		helper: 'original',
+		revert: 200
+	};
+
+	PluginPortlet.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			var _self = this;
+
+			this.options = $.extend(true, {}, PluginPortlet.defaults, opts, {
+				wrapper: this.$el,
+				update: _self.onUpdate,
+				create: _self.onLoad
+			});
+
+			return this;
+		},
+
+		onUpdate: function(event, ui) {
+			var key = storageOrderKey,
+				data = store.get(key),
+				$this = $(this),
+				porletId = $this.prop('id');
+
+			if (!data) {
+				data = {};
+			}
+
+			if (!!porletId) {
+				data[porletId] = $this.sortable('toArray');
+				store.set(key, data);
+			}
+		},
+
+		onLoad: function(event, ui) {
+			var key = storageOrderKey,
+				data = store.get(key),
+				$this = $(this),
+				porletId = $this.prop('id'),
+				portlet = $('#' + porletId);
+
+			if (!!data) {
+				var cards = data[porletId];
+
+				if (!!cards) {
+					$.each(cards, function(index, panelId) {
+						$('#' + panelId).appendTo(portlet);
+					});
+				}
+			}
+		},
+
+		saveState: function( panel ) {
+			var key = storageStateKey,
+				data = store.get(key),
+				panelId = panel.prop('id');
+
+			if (!data) {
+				data = {};
+			}
+
+			if (!panelId) {
+				return this;
+			}
+
+			var collapse = panel.find('.card-actions').children('a.fa-caret-up, a.fa-caret-down'),
+				isCollapsed = !!collapse.hasClass('fa-caret-up'),
+				isRemoved = !panel.closest('body').get(0);
+
+			if (isRemoved) {
+				data[panelId] = 'removed';
+			} else if (isCollapsed) {
+				data[panelId] = 'collapsed';
+			} else {
+				delete data[panelId];
+			}
+
+			store.set(key, data);
+			return this;
+		},
+
+		loadState: function() {
+			var key = storageStateKey,
+				data = store.get(key);
+
+			if (!!data) {
+				$.each(data, function(panelId, state) {
+					var panel = $('#' + panelId);
+					if (!panel.data('portlet-state-loaded')) {
+						if (state == 'collapsed') {
+							panel.find('.card-actions a.fa-caret-down').trigger('click');
+						} else if (state == 'removed') {
+							panel.find('.card-actions a.fa-times').trigger('click');
+						}
+						panel.data('portlet-state-loaded', true);
+					}
+				});
+			}
+
+			return this;
+		},
+
+		build: function() {
+			var _self = this;
+
+			if ( $.isFunction( $.fn.sortable ) ) {
+				this.$el.sortable( this.options );
+				this.$el.find('[data-portlet-item]').each(function() {
+					_self.events( $(this) );
+				});
+			}
+
+			var portlet = this.$el;
+			portlet.css('min-height', 150);
+
+			return this;
+		},
+
+		events: function($el) {
+			var _self = this,
+				portlet = $el.closest('[data-plugin-portlet]');
+
+			this.loadState();
+
+			$el.find('.card-actions').on( 'click', 'a.fa-caret-up, a.fa-caret-down, a.fa-times', function( e ) {
+				setTimeout(function() {
+					_self.saveState( $el );
+				}, 250);
+			});
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginPortlet: PluginPortlet
+	});
+
+	// jquery plugin
+	$.fn.themePluginPortlet = function(opts) {
 		return this.map(function() {
 			var $this = $(this);
 
 			if ($this.data(instanceName)) {
 				return $this.data(instanceName);
 			} else {
-				return new PluginRevolutionSlider($this, opts);
+				return new PluginPortlet($this, opts);
 			}
 
 		});
@@ -2488,11 +2985,7 @@ Theme Version:	1.1.0
 // Scroll to Top
 (function(theme, $) {
 
-	'use strict';
-
 	theme = theme || {};
-
-	var initialized = false;
 
 	$.extend(theme, {
 
@@ -2503,10 +2996,9 @@ Theme Version:	1.1.0
 				offset: 150,
 				buttonClass: 'scroll-to-top',
 				iconClass: 'fas fa-chevron-up',
-				delay: 1000,
+				delay: 500,
 				visibleMobile: false,
-				label: false,
-				easing: 'easeOutBack'
+				label: false
 			},
 
 			initialize: function(opts) {
@@ -2569,7 +3061,7 @@ Theme Version:	1.1.0
 					e.preventDefault();
 					$('body, html').animate({
 						scrollTop: 0
-					}, self.options.delay, self.options.easing);
+					}, self.options.delay);
 					return false;
 				});
 
@@ -2605,404 +3097,59 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Counter
+// Scrollable
 (function(theme, $) {
-
-	'use strict';
 
 	theme = theme || {};
 
-	var instanceName = '__sliderRange';
+	var instanceName = '__scrollable';
 
-	var PluginSliderRange = function($el, opts) {
+	var PluginScrollable = function($el, opts) {
 		return this.initialize($el, opts);
 	};
 
-	PluginSliderRange.defaults = {
-		start: [ 50, 250 ],
-		connect: true,
-		step: 1,
-		range: {
-			min: 0,
-			max: 300
-		}
+	PluginScrollable.updateModals = function() {
+		PluginScrollable.updateBootstrapModal();
 	};
 
-	PluginSliderRange.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
-
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginSliderRange.defaults, opts, {
-				wrapper: this.$el
-			});
-
-			return this;
-		},
-
-		build: function() {
-			if (!($.isFunction($.fn.countTo))) {
-				return this;
-			}
-
-			var self = this,
-				$el = this.options.wrapper,
-				priceLow = $('.price-range-low'),
-				priceHigh = $('.price-range-high'),
-				hiddenPriceLow = $('.hidden-price-range-low'),
-				hiddenPriceHigh = $('.hidden-price-range-high');
-
-			// Create Slider
-			noUiSlider.create($el[0], {
-				start: [ 50, 250 ],
-				connect: true,
-				step: 1,
-				range: {
-					'min': 0,
-					'max': 300
-				}
-			});
-
-			// Update Input values
-			$el[0].noUiSlider.on('update', function( values, handle ) {
-				var value = values[handle];
-
-				if ( handle ) {
-					priceHigh.text(Math.round(value));
-					hiddenPriceHigh.val(Math.round(value));
-				} else {
-					priceLow.text(Math.round(value));
-					hiddenPriceLow.val(Math.round(value));
-				}
-			});
-
-			return this;
-		}
-	};
-
-	// expose to scope
-	$.extend(theme, {
-		PluginSliderRange: PluginSliderRange
-	});
-
-	// jquery plugin
-	$.fn.themePluginSliderRange = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginSliderRange($this, opts);
-			}
-
-		});
-	}
-
-}).apply(this, [window.theme, jQuery]);
-
-// Sort
-(function(theme, $) {
-
-	'use strict';
-
-	theme = theme || {};
-
-	var instanceName = '__sort';
-
-	var PluginSort = function($el, opts) {
-		return this.initialize($el, opts);
-	};
-
-	PluginSort.defaults = {
-		useHash: true,
-		itemSelector: '.isotope-item',
-		layoutMode: 'masonry',
-		filter: '*',
-		hiddenStyle: {
-			opacity: 0
-		},
-		visibleStyle: {
-			opacity: 1
-		},
-		stagger: 30,
-		isOriginLeft: ($('html').attr('dir') == 'rtl' ? false : true)
-	};
-
-	PluginSort.prototype = {
-		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
-				return this;
-			}
-
-			this.$el = $el;
-
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
-
-			return this;
-		},
-
-		setData: function() {
-			this.$el.data(instanceName, this);
-
-			return this;
-		},
-
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginSort.defaults, opts, {
-				wrapper: this.$el
-			});
-
-			return this;
-		},
-
-		build: function() {
-			if (!($.isFunction($.fn.isotope))) {
-				return this;
-			}
-
-			var self = this,
-				$source = this.options.wrapper,
-				$destination = $('.sort-destination[data-sort-id="' + $source.attr('data-sort-id') + '"]'),
-				$window = $(window);
-
-			if ($destination.get(0)) {
-
-				self.$source = $source;
-				self.$destination = $destination;
-				self.$loader = false;
-
-				self.setParagraphHeight($destination);
-
-				if (self.$destination.parents('.sort-destination-loader').get(0)) {
-					self.$loader = self.$destination.parents('.sort-destination-loader');
-					self.createLoader();
-				}
-
-				$destination.attr('data-filter', '*');
-
-				$destination.one('layoutComplete', function(event, laidOutItems) {
-					self.removeLoader();
-				});
-
-				$destination.waitForImages(function() {
-					$destination.isotope(self.options);
-					self.events();
-				});
-
-				setTimeout(function() {
-					self.removeLoader();
-				}, 3000);
-
-			}
-
-			return this;
-		},
-
-		events: function() {
-			var self = this,
-				filter = null,
-				$window = $(window);
-
-			self.$source.find('a').on('click', function(e) {
-				e.preventDefault();
-
-				filter = $(this).parent().data('option-value');
-
-				self.setFilter(filter);
-
-				if (e.originalEvent) {
-					self.$source.trigger('filtered');
-				}
-
-				return this;
-			});
-
-			self.$destination.trigger('filtered');
-			self.$source.trigger('filtered');
-
-			if (self.options.useHash) {
-				self.hashEvents();
-			}
-
-			$window.on('resize', function() {
-				setTimeout(function() {
-					self.$destination.isotope('layout');
-				}, 300);
-			});
-
-			setTimeout(function() {
-				$window.trigger('resize');
-			}, 300);
-
-			return this;
-		},
-
-		setFilter: function(filter) {
-			var self = this,
-				page = false,
-				currentFilter = filter;
-
-			self.$source.find('.nav-link.active').removeClass('active');
-			self.$source.find('li[data-option-value="' + filter + '"] .nav-link').addClass('active');
-
-			self.options.filter = currentFilter;
-
-			if (self.$destination.attr('data-current-page')) {
-				currentFilter = currentFilter + '[data-page-rel=' + self.$destination.attr('data-current-page') + ']';
-			}
-
-			self.$destination.attr('data-filter', filter).isotope({
-				filter: currentFilter
-			}).one('arrangeComplete', function( event, filteredItems ) {
-				
-				if (self.options.useHash) {
-					if (window.location.hash != '' || self.options.filter.replace('.', '') != '*') {
-						window.location.hash = self.options.filter.replace('.', '');
-					}
-				}
-				
-				$(window).trigger('scroll');
-
-			}).trigger('filtered');
-
-			return this;
-		},
-
-		hashEvents: function() {
-			var self = this,
-				hash = null,
-				hashFilter = null,
-				initHashFilter = '.' + location.hash.replace('#', '');
-
-			if (initHashFilter != '.' && initHashFilter != '.*') {
-				self.setFilter(initHashFilter);
-			}
-
-			$(window).on('hashchange', function(e) {
-
-				hashFilter = '.' + location.hash.replace('#', '');
-				hash = (hashFilter == '.' || hashFilter == '.*' ? '*' : hashFilter);
-
-				self.setFilter(hash);
-
-			});
-
-			return this;
-		},
-
-		setParagraphHeight: function() {
-			var self = this,
-				minParagraphHeight = 0,
-				paragraphs = $('span.image-frame-caption p', self.$destination);
-
-			paragraphs.each(function() {
-				if ($(this).height() > minParagraphHeight) {
-					minParagraphHeight = ($(this).height() + 10);
-				}
-			});
-
-			paragraphs.height(minParagraphHeight);
-
-			return this;
-		},
-
-		createLoader: function() {
-			var self = this;
-
-			var loaderTemplate = [
-				'<div class="bounce-loader">',
-					'<div class="bounce1"></div>',
-					'<div class="bounce2"></div>',
-					'<div class="bounce3"></div>',
-				'</div>'
-			].join('');
-
-			self.$loader.append(loaderTemplate);
-
-			return this;
-		},
-
-		removeLoader: function() {
-
-			var self = this;
-
-			if (self.$loader) {
-
-				self.$loader.removeClass('sort-destination-loader-showing');
-
-				setTimeout(function() {
-					self.$loader.addClass('sort-destination-loader-loaded');
-				}, 300);
-
-			}
-
+	PluginScrollable.updateBootstrapModal = function() {
+		var updateBoostrapModal;
+
+		updateBoostrapModal = typeof $.fn.modal !== 'undefined';
+		updateBoostrapModal = updateBoostrapModal && typeof $.fn.modal.Constructor !== 'undefined';
+		updateBoostrapModal = updateBoostrapModal && typeof $.fn.modal.Constructor.prototype !== 'undefined';
+		updateBoostrapModal = updateBoostrapModal && typeof $.fn.modal.Constructor.prototype.enforceFocus !== 'undefined';
+
+		if ( !updateBoostrapModal ) {
+			return false;
 		}
 
-	};
+		var originalFocus = $.fn.modal.Constructor.prototype.enforceFocus;
+		$.fn.modal.Constructor.prototype.enforceFocus = function() {
+			originalFocus.apply( this );
 
-	// expose to scope
-	$.extend(theme, {
-		PluginSort: PluginSort
-	});
+			var $scrollable = this.$element.find('.scrollable');
+			if ( $scrollable ) {
+				if ( $.isFunction($.fn['themePluginScrollable'])  ) {
+					$scrollable.themePluginScrollable();
+				}
 
-	// jquery plugin
-	$.fn.themePluginSort = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginSort($this, opts);
+				if ( $.isFunction($.fn['nanoScroller']) ) {
+					$scrollable.nanoScroller();
+				}
 			}
-
-		});
-	}
-
-}).apply(this, [window.theme, jQuery]);
-
-// Steps
-(function(theme, $) {
-	
-	'use strict';
-	
-	theme = theme || {};
-	
-	var instanceName = '__steps';
-
-	var PluginSteps = function($el, opts) {
-		return this.initialize($el, opts);
+		};
 	};
 
-	PluginSteps.defaults = {
-		delay: 7000,
-		animDelay: 300,
-		hideDotsOnBack: true
+	PluginScrollable.defaults = {
+		contentClass: 'scrollable-content',
+		paneClass: 'scrollable-pane',
+		sliderClass: 'scrollable-slider',
+		alwaysVisible: true,
+		preventPageScrolling: true
 	};
 
-	PluginSteps.prototype = {
+	PluginScrollable.prototype = {
 		initialize: function($el, opts) {
 			if ( $el.data( instanceName ) ) {
 				return this;
@@ -3025,7 +3172,7 @@ Theme Version:	1.1.0
 		},
 
 		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginSteps.defaults, opts, {
+			this.options = $.extend(true, {}, PluginScrollable.defaults, opts, {
 				wrapper: this.$el
 			});
 
@@ -3033,179 +3180,53 @@ Theme Version:	1.1.0
 		},
 
 		build: function() {
-			var self = this,
-				$el = this.options.wrapper,
-				$item = $el.find('.item'),
-				$window = $(window);
+			this.options.wrapper.nanoScroller(this.options);
 
-			// Set first item active class on page load
-			if( !$el.find('.item.active').get(0) ) {
-				$el.find('.item').eq(0).addClass('active');
-			}
-
-			var start = function(firstTime) {				
-				var activeItem = $el.find('.item.active'),
-					firstItem  = $el.find('.item').eq(0),
-					nextItem   = ( activeItem.next().length == 0 ) ? firstItem : activeItem.next(),
-					nextItem2  = ( nextItem.next().length == 0 ) ? firstItem : nextItem.next(),
-					isLastItem = $el.find('.item').length - 1 == activeItem.index(),
-					darkDots   = $el.find('.dots-color-dark'),
-					darkDotsLeft = ( !firstTime ) ? parseFloat( nextItem2.css('left') ) / nextItem2.parent().width() * 100 : parseFloat( nextItem.css('left') ) / nextItem.parent().width() * 100,
-					darkDotsWidth = 140,
-					darkDotsTransitionDuration = self.options.delay - 1000;
-
-				// If mobile
-				if( $window.width() < 992 ) {
-					darkDotsLeft = ( !firstTime ) ? parseFloat( nextItem2.css('top') ) / nextItem2.parent().height() * 100 : parseFloat( nextItem.css('top') ) / nextItem.parent().height() * 100;
-				}
-
-				// If not is the first time
-				if( !firstTime ) {
-					$('.item').removeClass('active');
-					nextItem.addClass('active');
-				}
-
-				// Set dark dots transition duration
-				darkDots.css({
-					transition: 'linear left '+ darkDotsTransitionDuration +'ms'
-				});
-
-				// Check and set the value of left position for dark dots
-				if( darkDotsLeft == 50 ) {
-					darkDotsLeft = 50+'%';
-				} else if( darkDotsLeft > 50 ) {
-					darkDotsLeft = (darkDotsLeft + 20)+'%';
-				} else {
-					darkDotsLeft = (darkDotsLeft - 20)+'%';
-				}
-
-				// Set width and left position for dark dots
-				darkDots.css({
-					width: darkDotsWidth,
-					left: darkDotsLeft,
-					opacity: 1
-				});
-
-				// Hide dots when back
-				if( isLastItem && self.options.hideDotsOnBack ) {
-					darkDots.css({
-						opacity: 0
-					});
-				}
-
-				// Remove active border color from current item
-				setTimeout(function(){
-					nextItem.css({
-						'border-color': $el.find('.dots-color').css('background-color')
-					});
-				}, (isLastItem) ? self.options.delay : self.options.delay );
-
-				// Check if is first time
-				if( !firstTime ) {
-					
-					// Set active border color for next item
-					setTimeout(function(){
-						nextItem2.css({
-							'border-color': $el.find('.dots-color-dark').css('background-color')
-						});
-					}, self.options.delay);
-
-					// Link Elements
-					if( nextItem.data('link-to') ) {
-						var link_to = nextItem.data('link-to');
-
-						$('[data-link-id]').addClass('steps-shadow active');
-						$('[data-link-id="'+ link_to +'"]').removeClass('active');
-					}
-
-				} else {
-					
-					// Remove active border color from first item
-					setTimeout(function(){
-						firstItem.css({
-							'border-color': $el.find('.dots-color').css('background-color')
-						});
-					}, self.options.delay );
-
-					// Set active border color for next item
-					setTimeout(function(){
-						nextItem.css({
-							'border-color': $el.find('.dots-color-dark').css('background-color')
-						});
-					}, self.options.delay);
-
-					// Link Elements
-					if( firstItem.data('link-to') ) {
-						var link_to = firstItem.data('link-to');
-
-						$('[data-link-id]').addClass('steps-shadow active');
-						$('[data-link-id="'+ link_to +'"]').removeClass('active');
-					}
-				
-				}
-
-							
-			}
-
-			var initialized = false;
-			$window.on('scroll', function(){
-				if( $el.visible( true ) && initialized == false ) {
-					// Pevent to initialize again
-					initialized = true;
-
-					// Execute start() only one time (first time)
-					start(true);
-
-					// Execute start() every defined delay time
-					setInterval(function(){
-						start();
-					}, self.options.delay);
-				}
-			});
-			
 			return this;
 		}
 	};
 
 	// expose to scope
 	$.extend(theme, {
-		PluginSteps: PluginSteps
+		PluginScrollable: PluginScrollable
 	});
 
 	// jquery plugin
-	$.fn.themePluginSteps = function(opts) {
-		return this.map(function() {
+	$.fn.themePluginScrollable = function(opts) {
+		return this.each(function() {
 			var $this = $(this);
 
 			if ($this.data(instanceName)) {
 				return $this.data(instanceName);
 			} else {
-				return new PluginSteps($this, opts);
+				return new PluginScrollable($this, opts);
 			}
-			
+
 		});
-	}
+	};
 
-}).apply(this, [ window.theme, jQuery ]);
+	$(function() {
+		PluginScrollable.updateModals();
+	});
 
-// Sticky
+}).apply(this, [window.theme, jQuery]);
+
+// Select2
 (function(theme, $) {
-	
-	'use strict';
-	
-	theme = theme || {};
-	
-	var instanceName = '__sticky';
 
-	var PluginSticky = function($el, opts) {
+	theme = theme || {};
+
+	var instanceName = '__select2';
+
+	var PluginSelect2 = function($el, opts) {
 		return this.initialize($el, opts);
 	};
 
-	PluginSticky.defaults = {
-		
+	PluginSelect2.defaults = {
+		theme: 'bootstrap'
 	};
 
-	PluginSticky.prototype = {
+	PluginSelect2.prototype = {
 		initialize: function($el, opts) {
 			if ( $el.data( instanceName ) ) {
 				return this;
@@ -3216,8 +3237,7 @@ Theme Version:	1.1.0
 			this
 				.setData()
 				.setOptions(opts)
-				.build()
-				.events();
+				.build();
 
 			return this;
 		},
@@ -3229,100 +3249,432 @@ Theme Version:	1.1.0
 		},
 
 		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginSticky.defaults, opts, {
-				wrapper: this.$el
-			});
+			this.options = $.extend( true, {}, PluginSelect2.defaults, opts );
 
 			return this;
 		},
 
 		build: function() {
-			var self = this,
-				$window = $(window),
-				$html = $('html');
-			
-			if( !$.browser.mobile && !self.options.stickyStartAt ) {
-				self.options.wrapper.stick_in_parent(self.options);
-			}
+			this.$el.select2( this.options );
 
-			if( self.options.stickyStartAt ) {
-				var $stickyWrapper = self.options.wrapper,
-					$stickyBody     = self.options.wrapper.find('.sticky-body');
-
-				// Set Sticky Wrapper Height
-				$stickyWrapper.css({
-					height: $stickyWrapper.outerHeight()
-				});
-
-				// Change Logo Src
-				if( $stickyWrapper.find('img').attr('data-change-src') ) {
-					var $logo      = $stickyWrapper.find('img'),
-						logoSrc    = $logo.attr('src'),
-						logoNewSrc = $logo.attr('data-change-src');
-
-					self.changeLogoSrc = function(activate) {
-						if(activate) {
-							$logo.attr('src', logoNewSrc);
-						} else {
-							$logo.attr('src', logoSrc);
-						}
-					}
-				}
-			}
-			
 			return this;
-		},
-		events: function() {
-			var self = this,
-				$window = $(window),
-				$html = $('html'),
-				$logo = self.options.wrapper.find('img');
-
-			$window.on('scroll', function(){
-
-				if( self.options.stickyStartAt < $window.scrollTop() ) {
-					$html.addClass('sticky-wrapper-active');
-					
-					if( $logo.attr('data-change-src') ) {
-						self.changeLogoSrc(true);
-					}
-				} else {
-					$html.removeClass('sticky-wrapper-active');
-					
-					if( $logo.attr('data-change-src') ) {
-						self.changeLogoSrc(false);
-					}
-				}
-
-			});
 		}
 	};
 
 	// expose to scope
 	$.extend(theme, {
-		PluginSticky: PluginSticky
+		PluginSelect2: PluginSelect2
 	});
 
 	// jquery plugin
-	$.fn.themePluginSticky = function(opts) {
-		return this.map(function() {
+	$.fn.themePluginSelect2 = function(opts) {
+		return this.each(function() {
 			var $this = $(this);
 
 			if ($this.data(instanceName)) {
 				return $this.data(instanceName);
 			} else {
-				return new PluginSticky($this, opts);
+				return new PluginSelect2($this, opts);
 			}
-			
+
 		});
 	}
 
-}).apply(this, [ window.theme, jQuery ]);
+}).apply(this, [window.theme, jQuery]);
+
+// Slider
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__slider';
+
+	var PluginSlider = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginSlider.defaults = {
+
+	};
+
+	PluginSlider.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setVars()
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setVars: function() {
+			var $output = $( this.$el.data('plugin-slider-output') );
+			this.$output = $output.get(0) ? $output : null;
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			var _self = this;
+			this.options = $.extend( true, {}, PluginSlider.defaults, opts );
+
+			if ( this.$output ) {
+				$.extend( this.options, {
+					slide: function( event, ui ) {
+						_self.onSlide( event, ui );
+					}
+				});
+			}
+
+			return this;
+		},
+
+		build: function() {
+			this.$el.slider( this.options );
+
+			return this;
+		},
+
+		onSlide: function( event, ui ) {
+			if ( !ui.values ) {
+				this.$output.val( ui.value );
+			} else {
+				this.$output.val( ui.values[ 0 ] + '/' + ui.values[ 1 ] );
+			}
+
+			this.$output.trigger('change');
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginSlider: PluginSlider
+	});
+
+	// jquery plugin
+	$.fn.themePluginSlider = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginSlider($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// Spinner
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__spinner';
+
+	var PluginSpinner = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginSpinner.defaults = {
+	};
+
+	PluginSpinner.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, PluginSpinner.defaults, opts );
+
+			return this;
+		},
+
+		build: function() {
+			this.$el.spinner( this.options );
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginSpinner: PluginSpinner
+	});
+
+	// jquery plugin
+	$.fn.themePluginSpinner = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginSpinner($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// SummerNote
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__summernote';
+
+	var PluginSummerNote = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginSummerNote.defaults = {
+		onfocus: function() {
+			$( this ).closest( '.note-editor' ).addClass( 'active' );
+		},
+		onblur: function() {
+			$( this ).closest( '.note-editor' ).removeClass( 'active' );
+		}
+	};
+
+	PluginSummerNote.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, PluginSummerNote.defaults, opts );
+
+			return this;
+		},
+
+		build: function() {
+			this.$el.summernote( this.options );
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginSummerNote: PluginSummerNote
+	});
+
+	// jquery plugin
+	$.fn.themePluginSummerNote = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginSummerNote($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// TextArea AutoSize
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var initialized = false;
+	var instanceName = '__textareaAutosize';
+
+	var PluginTextAreaAutoSize = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginTextAreaAutoSize.defaults = {
+	};
+
+	PluginTextAreaAutoSize.prototype = {
+		initialize: function($el, opts) {
+			if (initialized) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, PluginTextAreaAutoSize.defaults, opts );
+
+			return this;
+		},
+
+		build: function() {
+
+			autosize($(this.$el));
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginTextAreaAutoSize: PluginTextAreaAutoSize
+	});
+
+	// jquery plugin
+	$.fn.themePluginTextAreaAutoSize = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginTextAreaAutoSize($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// TimePicker
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__timepicker';
+
+	var PluginTimePicker = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginTimePicker.defaults = {
+		disableMousewheel: true,
+		icons: {
+			up: 'fas fa-chevron-up',
+			down: 'fas fa-chevron-down'
+		}
+	};
+
+	PluginTimePicker.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, PluginTimePicker.defaults, opts );
+
+			return this;
+		},
+
+		build: function() {
+			this.$el.timepicker( this.options );
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		PluginTimePicker: PluginTimePicker
+	});
+
+	// jquery plugin
+	$.fn.themePluginTimePicker = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new PluginTimePicker($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
 
 // Toggle
 (function(theme, $) {
-
-	'use strict';
 
 	theme = theme || {};
 
@@ -3334,12 +3686,13 @@ Theme Version:	1.1.0
 
 	PluginToggle.defaults = {
 		duration: 350,
-		isAccordion: false
+		isAccordion: false,
+		addIcons: true
 	};
 
 	PluginToggle.prototype = {
 		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
@@ -3376,7 +3729,14 @@ Theme Version:	1.1.0
 			$items.each(function() {
 				$el = $(this);
 
-				if ($el.hasClass('active')) {
+				if(self.options.addIcons) {
+					$el.find('> label').prepend(
+						$('<i />').addClass('fas fa-plus'),
+						$('<i />').addClass('fas fa-minus')
+					);
+				}
+
+				if($el.hasClass('active')) {
 					$el.find('> p').addClass('preview-active');
 					$el.find('> .toggle-content').slideDown(self.options.duration);
 				}
@@ -3384,8 +3744,8 @@ Theme Version:	1.1.0
 				self.events($el);
 			});
 
-			if (self.options.isAccordion) {
-				self.options.duration = self.options.duration / 2;
+			if(self.options.isAccordion) {
+				self.options.duration = self.options.duration/2;
 			}
 
 			return this;
@@ -3397,7 +3757,7 @@ Theme Version:	1.1.0
 				previewParAnimateHeight = 0,
 				toggleContent = null;
 
-			$el.find('> label').on('click', function(e) {
+			$el.find('> label').click(function(e) {
 
 				var $this = $(this),
 					parentSection = $this.parent(),
@@ -3405,10 +3765,10 @@ Theme Version:	1.1.0
 					previewPar = null,
 					closeElement = null;
 
-				if (self.options.isAccordion && typeof(e.originalEvent) != 'undefined') {
+				if(self.options.isAccordion && typeof(e.originalEvent) != 'undefined') {
 					closeElement = parentWrapper.find('.toggle.active > label');
 
-					if (closeElement[0] == $this[0]) {
+					if(closeElement[0] == $this[0]) {
 						return;
 					}
 				}
@@ -3416,7 +3776,7 @@ Theme Version:	1.1.0
 				parentSection.toggleClass('active');
 
 				// Preview Paragraph
-				if (parentSection.find('> p').get(0)) {
+				if(parentSection.find('> p').get(0)) {
 
 					previewPar = parentSection.find('> p');
 					previewParCurrentHeight = previewPar.css('height');
@@ -3429,7 +3789,7 @@ Theme Version:	1.1.0
 				// Content
 				toggleContent = parentSection.find('> .toggle-content');
 
-				if (parentSection.hasClass('active')) {
+				if(parentSection.hasClass('active')) {
 
 					$(previewPar).animate({
 						height: previewParAnimateHeight
@@ -3438,7 +3798,7 @@ Theme Version:	1.1.0
 					});
 
 					toggleContent.slideDown(self.options.duration, function() {
-						if (closeElement) {
+						if(closeElement) {
 							closeElement.trigger('click');
 						}
 					});
@@ -3480,28 +3840,231 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Tweets
+// Widget - Todo
 (function(theme, $) {
-
-	'use strict';
 
 	theme = theme || {};
 
-	var instanceName = '__tweets';
+	var instanceName = '__widgetTodoList';
 
-	var PluginTweets = function($el, opts) {
+	var WidgetTodoList = function($el, opts) {
 		return this.initialize($el, opts);
 	};
 
-	PluginTweets.defaults = {
-		username: null,
-		count: 2,
-		URL: 'php/twitter-feed.php'
+	WidgetTodoList.defaults = {
 	};
 
-	PluginTweets.prototype = {
+	WidgetTodoList.prototype = {
 		initialize: function($el, opts) {
-			if ($el.data(instanceName)) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build()
+				.events();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, WidgetTodoList.defaults, opts );
+
+			return this;
+		},
+
+		check: function( input, label ) {
+			if ( input.is(':checked') ) {
+				label.addClass('line-through');
+			} else {
+				label.removeClass('line-through');
+			}
+		},
+
+		build: function() {
+			var _self = this,
+				$check = this.$el.find('.todo-check');
+
+			$check.each(function () {
+				var label = $(this).closest('li').find('.todo-label');
+				_self.check( $(this), label );
+			});
+
+			return this;
+		},
+
+		events: function() {
+			var _self = this,
+				$remove = this.$el.find( '.todo-remove' ),
+				$check = this.$el.find('.todo-check'),
+				$window = $( window );
+
+			$remove.on('click.widget-todo-list', function( ev ) {
+				ev.preventDefault();
+				$(this).closest("li").remove();
+			});
+
+			$check.on('change', function () {
+				var label = $(this).closest('li').find('.todo-label');
+				_self.check( $(this), label );
+			});
+
+			if ( $.isFunction( $.fn.sortable ) ) {
+				this.$el.sortable({
+					sort: function(event, ui) {
+						var top = event.pageY - _self.$el.offset().top - (ui.helper.outerHeight(true) / 2);
+						ui.helper.css({'top' : top + 'px'});
+				    }
+				});
+			}
+
+			return this;
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		WidgetTodoList: WidgetTodoList
+	});
+
+	// jquery plugin
+	$.fn.themePluginWidgetTodoList = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new WidgetTodoList($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// Widget - Toggle
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__widgetToggleExpand';
+
+	var WidgetToggleExpand = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	WidgetToggleExpand.defaults = {
+	};
+
+	WidgetToggleExpand.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$el = $el;
+
+			this
+				.setData()
+				.setOptions(opts)
+				.build()
+				.events();
+
+			return this;
+		},
+
+		setData: function() {
+			this.$el.data(instanceName, this);
+
+			return this;
+		},
+
+		setOptions: function(opts) {
+			this.options = $.extend( true, {}, WidgetToggleExpand.defaults, opts );
+
+			return this;
+		},
+
+		build: function() {
+			return this;
+		},
+
+		events: function() {
+			var _self = this,
+				$toggler = this.$el.find( '.widget-toggle' );
+
+			$toggler.on('click.widget-toggler', function() {
+				_self.$el.hasClass('widget-collapsed') ? _self.expand( _self.$el ) : _self.collapse( _self.$el );
+			});
+
+			return this;
+		},
+
+		expand: function( content ) {
+			content.children( '.widget-content-expanded' ).slideDown( 'fast', function() {
+				$(this).css( 'display', '' );
+				content.removeClass( 'widget-collapsed' );
+			});
+		},
+
+		collapse: function( content ) {
+			content.children('.widget-content-expanded' ).slideUp( 'fast', function() {
+				content.addClass( 'widget-collapsed' );
+				$(this).css( 'display', '' );
+			});
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		WidgetToggleExpand: WidgetToggleExpand
+	});
+
+	// jquery plugin
+	$.fn.themePluginWidgetToggleExpand = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new WidgetToggleExpand($this, opts);
+			}
+
+		});
+	}
+
+}).apply(this, [window.theme, jQuery]);
+
+// Word Rotator
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__wordRotator';
+
+	var PluginWordRotator = function($el, opts) {
+		return this.initialize($el, opts);
+	};
+
+	PluginWordRotator.defaults = {
+		delay: 2000
+	};
+
+	PluginWordRotator.prototype = {
+		initialize: function($el, opts) {
+			if ( $el.data( instanceName ) ) {
 				return this;
 			}
 
@@ -3522,7 +4085,7 @@ Theme Version:	1.1.0
 		},
 
 		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginTweets.defaults, opts, {
+			this.options = $.extend(true, {}, PluginWordRotator.defaults, opts, {
 				wrapper: this.$el
 			});
 
@@ -3530,23 +4093,41 @@ Theme Version:	1.1.0
 		},
 
 		build: function() {
-			if (this.options.username == null || this.options.username == '') {
-				return this;
-			}
+			var $el = this.options.wrapper,
+				itemsWrapper = $el.find(".wort-rotator-items"),
+				items = itemsWrapper.find("> span"),
+				firstItem = items.eq(0),
+				firstItemClone = firstItem.clone(),
+				itemHeight = firstItem.height(),
+				currentItem = 1,
+				currentTop = 0;
 
-			var self = this,
-				$wrapper = this.options.wrapper;
+			itemsWrapper.append(firstItemClone);
 
-			$.ajax({
-				type: 'GET',
-				data: {
-					twitter_screen_name: self.options.username,
-					tweets_to_display: self.options.count
-				},
-				url: self.options.URL,
-			}).done(function(html) {
-				$wrapper.html(html).find('a').attr('target','_blank');
-			});
+			$el
+				.height(itemHeight)
+				.addClass("active");
+
+			setInterval(function() {
+
+				currentTop = (currentItem * itemHeight);
+
+				itemsWrapper.animate({
+					top: -(currentTop) + "px"
+				}, 300, function() {
+
+					currentItem++;
+
+					if(currentItem > items.length) {
+
+						itemsWrapper.css("top", 0);
+						currentItem = 1;
+
+					}
+
+				});
+
+			}, this.options.delay);
 
 			return this;
 		}
@@ -3554,18 +4135,18 @@ Theme Version:	1.1.0
 
 	// expose to scope
 	$.extend(theme, {
-		PluginTweets: PluginTweets
+		PluginWordRotator: PluginWordRotator
 	});
 
 	// jquery plugin
-	$.fn.themePluginTweets = function(opts) {
-		return this.map(function() {
+	$.fn.themePluginWordRotator = function(opts) {
+		return this.each(function() {
 			var $this = $(this);
 
 			if ($this.data(instanceName)) {
 				return $this.data(instanceName);
 			} else {
-				return new PluginTweets($this, opts);
+				return new PluginWordRotator($this, opts);
 			}
 
 		});
@@ -3573,1129 +4154,885 @@ Theme Version:	1.1.0
 
 }).apply(this, [window.theme, jQuery]);
 
-// Validation
-(function(theme, $) {
+// Navigation
+(function($) {
 
 	'use strict';
 
-	theme = theme || {};
+	var $items = $( '.nav-main li.nav-parent' );
 
-	var initialized = false;
+	function expand( $li ) {
+		$li.children( 'ul.nav-children' ).slideDown( 'fast', function() {
+			$li.addClass( 'nav-expanded' );
+			$(this).css( 'display', '' );
+			ensureVisible( $li );
+		});
+	}
 
-	$.extend(theme, {
+	function collapse( $li ) {
+		$li.children('ul.nav-children' ).slideUp( 'fast', function() {
+			$(this).css( 'display', '' );
+			$li.removeClass( 'nav-expanded' );
+		});
+	}
 
-		PluginValidation: {
+	function ensureVisible( $li ) {
+		var scroller = $li.offsetParent();
+		if ( !scroller.get(0) ) {
+			return false;
+		}
 
-			defaults: {
-				validator: {
-					highlight: function(element) {
-						$(element)
-							.parent()
-							.removeClass('has-success')
-							.addClass('has-error');
-					},
-					success: function(element) {
-						$(element)
-							.parent()
-							.removeClass('has-error')
-							.addClass('has-success')
-							.find('label.error')
-							.remove();
-					},
-					errorPlacement: function(error, element) {
-						if (element.attr('type') == 'radio' || element.attr('type') == 'checkbox') {
-							error.appendTo(element.parent().parent());
-						} else {
-							error.insertAfter(element);
-						}
-					}
-				},
-				validateCaptchaURL: 'php/contact-form-verify-captcha.php',
-				refreshCaptchaURL: 'php/contact-form-refresh-captcha.php'
-			},
+		var top = $li.position().top;
+		if ( top < 0 ) {
+			scroller.animate({
+				scrollTop: scroller.scrollTop() + top
+			}, 'fast');
+		}
+	}
 
-			initialize: function(opts) {
-				initialized = true;
-
-				this
-					.setOptions(opts)
-					.build();
-
-				return this;
-			},
-
-			setOptions: function(opts) {
-				this.options = $.extend(true, {}, this.defaults, opts);
-
-				return this;
-			},
-
-			build: function() {
-				var self = this;
-
-				if (!($.isFunction($.validator))) {
-					return this;
-				}
-
-				self.addMethods();
-				self.setMessageGroups();
-
-				$.validator.setDefaults(self.options.validator);
-
-				return this;
-			},
-
-			addMethods: function() {
-				var self = this;
-
-				$.validator.addMethod('captcha', function(value, element, params) {
-					var captchaValid = false;
-
-					$.ajax({
-						url: self.options.validateCaptchaURL,
-						type: 'POST',
-						async: false,
-						dataType: 'json',
-						data: {
-							captcha: $.trim(value)
-						},
-						success: function(data) {
-							if (data.response == 'success') {
-								captchaValid = true;
-							}
-						}
-					});
-
-					if (captchaValid) {
-						return true;
-					}
-
-				}, '');
-
-				// Refresh Captcha
-				$('#refreshCaptcha').on('click', function(e) {
-					e.preventDefault();
-					$.get(self.options.refreshCaptchaURL, function(url) {
-						$('#captcha-image').attr('src', url);
-					});					
-				});
-
-			},
-
-			setMessageGroups: function() {
-
-				$('.checkbox-group[data-msg-required], .radio-group[data-msg-required]').each(function() {
-					var message = $(this).data('msg-required');
-					$(this).find('input').attr('data-msg-required', message);
-				});
-
+	function buildSidebarNav( anchor, prev, next, ev ) {
+		if ( anchor.prop('href') ) {
+			var arrowWidth = parseInt(window.getComputedStyle(anchor.get(0), ':after').width, 10) || 0;
+			if (ev.offsetX > anchor.get(0).offsetWidth - arrowWidth) {
+				ev.preventDefault();
 			}
+		}
 
+		if ( prev.get( 0 ) !== next.get( 0 ) ) {
+			collapse( prev );
+			expand( next );
+		} else {
+			collapse( prev );
+		}
+	}
+
+	$items.find('> a').on('click', function( ev ) {
+
+		var $html   = $('html'),
+			$window = $(window),
+		    $anchor = $( this ),
+			$prev   = $anchor.closest('ul.nav').find('> li.nav-expanded' ),
+			$next   = $anchor.closest('li'),
+			$ev     = ev;
+
+		if( $anchor.attr('href') == '#' ) {
+			ev.preventDefault();
+		}
+
+		if( !$html.hasClass('sidebar-left-big-icons') ) {
+			buildSidebarNav( $anchor, $prev, $next, $ev );
+		} else if( $html.hasClass('sidebar-left-big-icons') && $window.width() < 768 ) {
+			buildSidebarNav( $anchor, $prev, $next, $ev );
 		}
 
 	});
 
-}).apply(this, [window.theme, jQuery]);
+	// Chrome Fix
+	$.browser.chrome = /chrom(e|ium)/.test(navigator.userAgent.toLowerCase());
+	if( $.browser.chrome && !$.browser.mobile ) {
+		var flag = true;
+		$('.sidebar-left .nav-main li a').on('click', function(){
+			flag = false;
+			setTimeout(function(){
+				flag = true;
+			}, 200);
+		});
 
-// Video Background
+		$('.nano').on('mouseenter', function(e){
+			$(this).addClass('hovered');
+		});
+
+		$('.nano').on('mouseleave', function(e){
+			if( flag ) {
+				$(this).removeClass('hovered');
+			}
+		});	
+	}
+
+	$('.nav-main a').filter(':not([href])').attr('href', '#');
+
+}).apply(this, [jQuery]);
+
+// Skeleton
 (function(theme, $) {
 
 	'use strict';
 
 	theme = theme || {};
 
-	var instanceName = '__videobackground';
+	var $body				= $( 'body' ),
+		$html				= $( 'html' ),
+		$window				= $( window ),
+		isAndroid			= navigator.userAgent.toLowerCase().indexOf('android') > -1,
+		isIpad      		= navigator.userAgent.match(/iPad/i) != null,
+		updatingNanoScroll  = false;
 
-	var PluginVideoBackground = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+	// mobile devices with fixed has a lot of issues when focus inputs and others...
+	if ( typeof $.browser !== 'undefined' && $.browser.mobile && $html.hasClass('fixed') ) {
+		$html.removeClass( 'fixed' ).addClass( 'scroll' );
+	}
 
-	PluginVideoBackground.defaults = {
-		overlay: true,
-		volume: 1,
-		playbackRate: 1,
-		muted: true,
-		loop: true,
-		autoplay: true,
-		position: '50% 50%',
-		posterType: 'detect',
-		className: 'z-index-0'
-	};
+	var Skeleton = {
 
-	PluginVideoBackground.prototype = {
-		initialize: function($el, opts) {
-			this.$el = $el;
+		options: {
+			sidebars: {
+				menu: '#content-menu',
+				left: '#sidebar-left',
+				right: '#sidebar-right'
+			}
+		},
 
+		customScroll: ( !Modernizr.overflowscrolling && !isAndroid && $.fn.nanoScroller !== 'undefined'),
+
+		initialize: function() {
 			this
-				.setData()
-				.setOptions(opts)
-				.build();
-
-			return this;
+				.setVars()
+				.build()
+				.events();
 		},
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+		setVars: function() {
+			this.sidebars = {};
 
-			return this;
-		},
+			this.sidebars.left = {
+				$el: $( this.options.sidebars.left )
+			};
 
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginVideoBackground.defaults, opts, {
-				path: this.$el.data('video-path'),
-				wrapper: this.$el
-			});
+			this.sidebars.right = {
+				$el: $( this.options.sidebars.right ),
+				isOpened: $html.hasClass( 'sidebar-right-opened' )
+			};
+
+			this.sidebars.menu = {
+				$el: $( this.options.sidebars.menu ),
+				isOpened: $html.hasClass( 'inner-menu-opened' )
+			};
 
 			return this;
 		},
 
 		build: function() {
 
-			if (!($.isFunction($.fn.vide)) || (!this.options.path)) {
-				return this;
+			if ( typeof $.browser !== 'undefined' && $.browser.mobile ) {
+				$html.addClass( 'mobile-device' );
+			} else {
+				$html.addClass( 'no-mobile-device' );
 			}
 
-			if (this.options.overlay) {
-				this.options.wrapper.prepend(
-					$('<div />').addClass('video-overlay')
-				);
+			$html.addClass( 'custom-scroll' );
+			if ( this.customScroll ) {
+				this.buildSidebarLeft();
+				this.buildContentMenu();
 			}
 
-			this.options.wrapper.vide(this.options.path, this.options);
+			if( isIpad ) {
+				this.fixIpad();
+			}
+
+			this.buildSidebarRight();
 
 			return this;
-		}
-	};
+		},
 
-	// expose to scope
-	$.extend(theme, {
-		PluginVideoBackground: PluginVideoBackground
-	});
-
-	// jquery plugin
-	$.fn.themePluginVideoBackground = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginVideoBackground($this, opts);
+		events: function() {
+			if ( this.customScroll ) {
+				this.eventsSidebarLeft();
 			}
 
-		});
-	}
+			this.eventsSidebarRight();
+			this.eventsContentMenu();
 
-}).apply(this, [window.theme, jQuery]);
-
-// Account
-(function(theme, $) {
-
-	theme = theme || {};
-
-	var initialized = false;
-
-	$.extend(theme, {
-
-		Account: {
-
-			defaults: {
-				wrapper: $('#headerAccount')
-			},
-
-			initialize: function($wrapper, opts) {
-				if (initialized) {
-					return this;
-				}
-
-				initialized = true;
-				this.$wrapper = ($wrapper || this.defaults.wrapper);
-
-				this
-					.setOptions(opts)
-					.events();
-
-				return this;
-			},
-
-			setOptions: function(opts) {
-				this.options = $.extend(true, {}, this.defaults, opts, theme.fn.getOptions(this.$wrapper.data('plugin-options')));
-
-				return this;
-			},
-
-			events: function() {
-				var self = this;
-
-				self.$wrapper.find('input').on('focus', function() {
-					self.$wrapper.addClass('open');
-
-					$(document).mouseup(function(e) {
-						if (!self.$wrapper.is(e.target) && self.$wrapper.has(e.target).length === 0) {
-							self.$wrapper.removeClass('open');
-						}
-					});
-				});
-
-				$('#headerSignUp').on('click', function(e) {
-					e.preventDefault();
-					self.$wrapper.addClass('signup').removeClass('signin').removeClass('recover');
-					self.$wrapper.find('.signup-form input:first').focus();
-				});
-
-				$('#headerSignIn').on('click', function(e) {
-					e.preventDefault();
-					self.$wrapper.addClass('signin').removeClass('signup').removeClass('recover');
-					self.$wrapper.find('.signin-form input:first').focus();
-				});
-
-				$('#headerRecover').on('click', function(e) {
-					e.preventDefault();
-					self.$wrapper.addClass('recover').removeClass('signup').removeClass('signin');
-					self.$wrapper.find('.recover-form input:first').focus();
-				});
-
-				$('#headerRecoverCancel').on('click', function(e) {
-					e.preventDefault();
-					self.$wrapper.addClass('signin').removeClass('signup').removeClass('recover');
-					self.$wrapper.find('.signin-form input:first').focus();
-				});
+			if ( typeof $.browser !== 'undefined' && !this.customScroll && isAndroid ) {
+				this.fixScroll();
 			}
 
-		}
+			return this;
+		},
 
-	});
+		fixScroll: function() {
+			var _self = this;
 
-}).apply(this, [window.theme, jQuery]);
-
-// Nav
-(function(theme, $) {
-
-	theme = theme || {};
-
-	var initialized = false;
-
-	$.extend(theme, {
-
-		Nav: {
-
-			defaults: {
-				wrapper: $('#mainNav'),
-				scrollDelay: 600,
-				scrollAnimation: 'easeOutQuad'
-			},
-
-			initialize: function($wrapper, opts) {
-				if (initialized) {
-					return this;
-				}
-
-				initialized = true;
-				this.$wrapper = ($wrapper || this.defaults.wrapper);
-
-				this
-					.setOptions(opts)
-					.build()
-					.events();
-
-				return this;
-			},
-
-			setOptions: function(opts) {
-				this.options = $.extend(true, {}, this.defaults, opts, theme.fn.getOptions(this.$wrapper.data('plugin-options')));
-
-				return this;
-			},
-
-			build: function() {
-				var self = this,
-					$html = $('html'),
-					$header = $('#header'),
-					thumbInfoPreview;
-
-				// Add Arrows
-				$header.find('.dropdown-toggle, .dropdown-submenu > a').append($('<i />').addClass('menu-arrow'));
-
-				// Side Header
-				if( $html.hasClass('side-header') || $html.hasClass('side-header-overlay-full-screen') ) {
-					
-					// Nano Scroll
-					$('.nano').nanoScroller({
-						alwaysVisible: true
-					});
-				}
-
-				// Reverse
-				self.checkReverse = function() {
-
-					self.$wrapper.find('.dropdown-submenu').removeClass('dropdown-reverse');
-
-					self.$wrapper.find('.dropdown-submenu:not(.manual)').each(function() {
-						if(!$(this).find('.dropdown-menu').visible( false, true, 'horizontal' )  ) {
-							$(this).addClass('dropdown-reverse');
-						}
-					});
-				}
-
-				if( !$html.hasClass('side-header') && !$html.hasClass('side-header-overlay-full-screen') ) {
-					self.checkReverse();
-
-	 				$(window).on('resize', function() {
-						self.checkReverse();
-	 				});
-				}
-
-				return this;
-			},
-
-			events: function() {
-				var self    = this,
-					$html   = $('html'),
-					$header = $('#header'),
-					$window = $(window),
-					headerBodyHeight = $('.header-body').outerHeight();
-
-				$header.find('a[href="#"]').on('click', function(e) {
-					e.preventDefault();
+			$window
+				.on( 'sidebar-left-opened sidebar-right-toggle', function( e, data ) {
+					_self.preventBodyScrollToggle( data.added );
 				});
 
-				// Mobile Arrows
-				$header.find('.dropdown-toggle[href="#"], .dropdown-submenu a[href="#"], .dropdown-toggle[href!="#"] .menu-arrow, .dropdown-submenu a[href!="#"] .menu-arrow').on('click', function(e) {
-					e.preventDefault();
-					if ($window.width() < 992 || $html.hasClass('side-header') || $html.hasClass('side-header-overlay-full-screen')) {
-						if( $(this).closest('li').hasClass('opened') ) {
-							$(this).closest('li').find('> .dropdown-menu').slideUp(600, function(){
-								$(this).closest('li').removeClass('opened');
+		},
 
-								// Refresh Nano Scroll
-								if( $html.hasClass('side-header') || $html.hasClass('side-header-overlay-full-screen') ) {
-									$('.nano').nanoScroller();
-								}
-								
-							});
-						} else {
-							$(this).closest('li').addClass('opened');
-							$(this).closest('li').find('> .dropdown-menu').slideDown(600, function(){
-								
-								// Refresh Nano Scroll
-								if( $html.hasClass('side-header') || $html.hasClass('side-header-overlay-full-screen') ) {
-									$('.nano').nanoScroller();
-								}
-								
-							});
-						}
+		fixIpad: function() {
+			var _self = this;
+
+			$('.header, .page-header, .content-body').on('click', function(){
+				$html.removeClass('sidebar-left-opened');
+			});
+		},
+
+		buildSidebarLeft: function() {
+
+			var initialPosition = 0;
+
+			this.sidebars.left.isOpened = !$html.hasClass( 'sidebar-left-collapsed' ) || $html.hasClass( 'sidebar-left-opened' );
+
+			this.sidebars.left.$nano = this.sidebars.left.$el.find( '.nano' );
+
+			if (typeof localStorage !== 'undefined') {
+				this.sidebars.left.$nano.on('update', function(e, values) {
+					localStorage.setItem('sidebar-left-position', values.position);
+				});
+
+				if (localStorage.getItem('sidebar-left-position') !== null) {
+					initialPosition = localStorage.getItem('sidebar-left-position');
+					this.sidebars.left.$el.find( '.nano-content').scrollTop(initialPosition);
+				}
+			}
+
+			this.sidebars.left.$nano.nanoScroller({
+				scrollTop: initialPosition,
+				alwaysVisible: true,
+				preventPageScrolling: $html.hasClass( 'fixed' )
+			});
+
+			return this;
+		},
+
+		eventsSidebarLeft: function() {
+
+			var _self = this,
+				$nano = this.sidebars.left.$nano;
+
+			var open = function() {
+				if ( _self.sidebars.left.isOpened ) {
+					return close();
+				}
+
+				_self.sidebars.left.isOpened = true;
+
+				$html.addClass( 'sidebar-left-opened' );
+
+				$window.trigger( 'sidebar-left-toggle', {
+					added: true,
+					removed: false
+				});
+
+				$html.on( 'click.close-left-sidebar', function(e) {
+					e.stopPropagation();
+					close(e);
+				});
+
+
+			};
+
+			var close = function(e) {
+				if ( !!e && !!e.target && ($(e.target).closest( '.sidebar-left' ).get(0) || !$(e.target).closest( 'html' ).get(0)) ) {
+					e.preventDefault();
+					return false;
+				} else {
+
+					$html.removeClass( 'sidebar-left-opened' );
+					$html.off( 'click.close-left-sidebar' );
+
+					$window.trigger( 'sidebar-left-toggle', {
+						added: false,
+						removed: true
+					});
+
+					_self.sidebars.left.isOpened = !$html.hasClass( 'sidebar-left-collapsed' );
+
+				}
+			};
+
+			var updateNanoScroll = function() {
+				if (updatingNanoScroll) {
+					if ( $.support.transition ) {
+						$nano.nanoScroller();
+						$nano
+							.one('bsTransitionEnd', updateNanoScroll)
+							.emulateTransitionEnd(150)
+					} else {
+						updateNanoScroll();
+					}
+
+					updatingNanoScroll = true;
+
+					setTimeout(function() {
+						updatingNanoScroll = false;
+					}, 200);
+				}
+			};
+
+			var isToggler = function( element ) {
+				return $(element).data('fire-event') === 'sidebar-left-toggle' || $(element).parents().data('fire-event') === 'sidebar-left-toggle';
+			};
+
+			this.sidebars.left.$el
+				.on( 'click', function() {
+					updateNanoScroll();
+				})
+				.on('touchend', function(e) {
+					_self.sidebars.left.isOpened = !$html.hasClass( 'sidebar-left-collapsed' ) || $html.hasClass( 'sidebar-left-opened' );
+					if ( !_self.sidebars.left.isOpened && !isToggler(e.target) ) {
+						e.stopPropagation();
+						e.preventDefault();
+						open();
 					}
 				});
 
-				// Touch Devices with normal resolutions
-				if('ontouchstart' in document.documentElement) {
-					$header.find('.dropdown-toggle:not([href="#"]), .dropdown-submenu > a:not([href="#"])')
-						.on('touchstart click', function(e) {
-							if($window.width() > 991) {
+			$nano
+				.on( 'mouseenter', function() {
+					if ( $html.hasClass( 'sidebar-left-collapsed' ) ) {
+						$nano.nanoScroller();
+					}
+				})
+				.on( 'mouseleave', function() {
+					if ( $html.hasClass( 'sidebar-left-collapsed' ) ) {
+						$nano.nanoScroller();
+					}
+				});
 
-								e.stopPropagation();
-								e.preventDefault();
+			$window.on( 'sidebar-left-toggle', function(e, toggle) {
+				if ( toggle.removed ) {
+					$html.removeClass( 'sidebar-left-opened' );
+					$html.off( 'click.close-left-sidebar' );
+				}
+				
+				// Recalculate Owl Carousel sizes
+				$('.owl-carousel').trigger('refresh.owl.carousel');
+			});
 
-								if(e.handled !== true) {
+			return this;
+		},
 
-									var li = $(this).closest('li');
+		buildSidebarRight: function() {
+			this.sidebars.right.isOpened = $html.hasClass( 'sidebar-right-opened' );
 
-									if(li.hasClass('tapped')) {
-										location.href = $(this).attr('href');
-									}
+			if ( this.customScroll ) {
+				this.sidebars.right.$nano = this.sidebars.right.$el.find( '.nano' );
 
-									li.addClass('tapped');
+				this.sidebars.right.$nano.nanoScroller({
+					alwaysVisible: true,
+					preventPageScrolling: true
+				});
+			}
 
-									e.handled = true;
-								} else {
-									return false;
-								}
+			return this;
+		},
 
-								return false;
+		eventsSidebarRight: function() {
+			var _self = this;
 
-							}
+			var open = function() {
+				if ( _self.sidebars.right.isOpened ) {
+					return close();
+				}
+
+				_self.sidebars.right.isOpened = true;
+
+				$html.addClass( 'sidebar-right-opened' );
+
+				$window.trigger( 'sidebar-right-toggle', {
+					added: true,
+					removed: false
+				});
+
+				$html.on( 'click.close-right-sidebar', function(e) {
+					e.stopPropagation();
+					close(e);
+				});
+			};
+
+			var close = function(e) {
+				if ( !!e && !!e.target && ($(e.target).closest( '.sidebar-right' ).get(0) || !$(e.target).closest( 'html' ).get(0)) ) {
+					return false;
+				}
+
+				$html.removeClass( 'sidebar-right-opened' );
+				$html.off( 'click.close-right-sidebar' );
+
+				$window.trigger( 'sidebar-right-toggle', {
+					added: false,
+					removed: true
+				});
+
+				_self.sidebars.right.isOpened = false;
+			};
+
+			var bind = function() {
+				$('[data-open="sidebar-right"]').on('click', function(e) {
+					var $el = $(this);
+					e.stopPropagation();
+
+					if ( $el.is('a') )
+						e.preventDefault();
+
+					open();
+				});
+			};
+
+			this.sidebars.right.$el.find( '.mobile-close' )
+				.on( 'click', function( e ) {
+					e.preventDefault();
+					$html.trigger( 'click.close-right-sidebar' );
+				});
+
+			bind();
+
+			return this;
+		},
+
+		buildContentMenu: function() {
+			if ( !$html.hasClass( 'fixed' ) ) {
+				return false;
+			}
+
+			this.sidebars.menu.$nano = this.sidebars.menu.$el.find( '.nano' );
+
+			this.sidebars.menu.$nano.nanoScroller({
+				alwaysVisible: true,
+				preventPageScrolling: true
+			});
+
+			return this;
+		},
+
+		eventsContentMenu: function() {
+			var _self = this;
+
+			var open = function() {
+				if ( _self.sidebars.menu.isOpened ) {
+					return close();
+				}
+
+				_self.sidebars.menu.isOpened = true;
+
+				$html.addClass( 'inner-menu-opened' );
+
+				$window.trigger( 'inner-menu-toggle', {
+					added: true,
+					removed: false
+				});
+
+				$html.on( 'click.close-inner-menu', function(e) {
+
+					close(e);
+				});
+
+			};
+
+			var close = function(e) {
+				var hasEvent,
+					hasTarget,
+					isCollapseButton,
+					isInsideModal,
+					isInsideInnerMenu,
+					isInsideHTML,
+					$target;
+
+				hasEvent = !!e;
+				hasTarget = hasEvent && !!e.target;
+
+				if ( hasTarget ) {
+					$target = $(e.target);
+				}
+
+				isCollapseButton = hasTarget && !!$target.closest( '.inner-menu-collapse' ).get(0);
+				isInsideModal = hasTarget && !!$target.closest( '.mfp-wrap' ).get(0);
+				isInsideInnerMenu = hasTarget && !!$target.closest( '.inner-menu' ).get(0);
+				isInsideHTML = hasTarget && !!$target.closest( 'html' ).get(0);
+
+				if ( (!isCollapseButton && (isInsideInnerMenu || !isInsideHTML)) || isInsideModal ) {
+					return false;
+				}
+
+				e.stopPropagation();
+
+				$html.removeClass( 'inner-menu-opened' );
+				$html.off( 'click.close-inner-menu' );
+
+				$window.trigger( 'inner-menu-toggle', {
+					added: false,
+					removed: true
+				});
+
+				_self.sidebars.menu.isOpened = false;
+			};
+
+			var bind = function() {
+				$('[data-open="inner-menu"]').on('click', function(e) {
+					var $el = $(this);
+					e.stopPropagation();
+
+					if ( $el.is('a') )
+						e.preventDefault();
+
+					open();
+				});
+			};
+
+			bind();
+
+			/* Nano Scroll */
+			if ( $html.hasClass( 'fixed' ) ) {
+				var $nano = this.sidebars.menu.$nano;
+
+				var updateNanoScroll = function() {
+					if ( $.support.transition ) {
+						$nano.nanoScroller();
+						$nano
+							.one('bsTransitionEnd', updateNanoScroll)
+							.emulateTransitionEnd(150)
+					} else {
+						updateNanoScroll();
+					}
+				};
+
+				this.sidebars.menu.$el
+					.on( 'click', function() {
+						updateNanoScroll();
+					});
+			}
+
+			return this;
+		},
+
+		preventBodyScrollToggle: function( shouldPrevent, $el ) {
+			setTimeout(function() {
+				if ( shouldPrevent ) {
+					$body
+						.data( 'scrollTop', $body.get(0).scrollTop )
+						.css({
+							position: 'fixed',
+							top: $body.get(0).scrollTop * -1
 						})
-						.on('blur', function(e) {
-							$(this).closest('li').removeClass('tapped');
-						});
-
-				}
-
-				// Collapse Nav
-				$header.find('[data-collapse-nav]').on('click', function(e) {
-					$(this).parents('.collapse').removeClass('in');
-				});
-
-				// Mobile Menu Button
-				var mobileMenuBtn = $('.header-btn-collapse-nav'),
-					flagMenu = true;
-				
-				mobileMenuBtn.on('click', function(){
-					if( flagMenu ) {
-						$(this).toggleClass('active');
-						$html.addClass('mobile-menu-opened');
-					}
-					flagMenu = false;
-				});
-
-				$('.header-nav-main nav').on('show.bs.collapse hide.bs.collapse', function (e) {
-				    if( e.type == 'hide' ) {
-					    $html.removeClass('mobile-menu-opened');
-					    $(this).addClass('closed');
-				    }
-				    if( e.type == 'show' ) {
-					    $(this).removeClass('closed');
-				    }
-				    flagMenu = true;
-				});
-
-				// Anchors Position
-				$('[data-hash]').each(function() {
-
-					var target    = ($(this).attr('href') != '#') ? $(this).attr('href') : '',
-						offset    = ($(this).is("[data-hash-offset]") ? $(this).data('hash-offset') : 0),
-						highlight = ($(this).is("[data-hash-highlight]") ? true : false);
-
-					if($(target).get(0)) {
-						$(this).on('click', function(e) {
-							e.preventDefault();
-
-							if( $window.width() < 992 ) {
-								if( !$(e.target).is('i') ) {
-
-									// Close Collapse if Opened
-									$(this).parents('.collapse.show').collapse('hide');
-
-									// Change state of mobile menu button
-									$('.header-btn-collapse-nav').removeClass('active')
-
-									// Scroll to target
-									self.scrollToTarget(target, offset, highlight);
-									
-								}
-							} else {
-								// Scroll to target
-								self.scrollToTarget(target, offset, highlight);
-							}
-
-							return;
-						});
-					}
-
-				});
-
-				// Side Header Nano Scroll On Resize
-				if( $html.hasClass('side-header') ) {
-					$window.on('resize', function(){
-						if( $window.width() < 992 ) {
-							$('.nano').nanoScroller({ destroy: true });
-							$header.find('.header-nav').removeClass('nano');
-						} else {
-							$header.find('.header-nav').addClass('nano');
-							$('.nano').nanoScroller();
-						}
-					});
-				}
-
-				// Side Header Toggle
-				if( $html.hasClass('side-header-from-out') || $html.hasClass('side-header-overlay-full-screen') ) {
-					$('.side-header-btn-toggle').on('click', function(){
-						$header.toggleClass('side-header-show');
-						
-						if( $html.hasClass('side-header-overlay-full-screen') ) {
-							$html.find('body').addClass('no-vertical-scroll');
-						}
-						return false;
-					});
-
-					$('.side-header-btn-close').on('click', function(){
-						$header.removeClass('side-header-show');
-						
-						if( $html.hasClass('side-header-overlay-full-screen') ) {
-							$html.find('body').removeClass('no-vertical-scroll');
-						}
-						return false;
-					});
-				}
-
-				// Header Search Expanded
-				var searchBtn  = $header.find('.header-search-button'),
-					searchExpanded = $header.find('.header-search-expanded');
-				
-				if( searchExpanded ) {
-					searchBtn.on('click', function(){
-						$html.toggleClass('header-search-expanded-active');
-					});
-					
-					$(document).mouseup(function(e) {
-						if (!searchExpanded.is(e.target) && searchExpanded.has(e.target).length === 0) {
-							$html.removeClass('header-search-expanded-active');
-						}
-					});
-				}
-
-				return this;
-			},
-
-			scrollToTarget: function(target, offset, highlight) {
-				var self = this;
-
-				$('body').addClass('scrolling');
-
-				$('html, body').animate({
-					scrollTop: $(target).offset().top - offset
-				}, self.options.scrollDelay, self.options.scrollAnimation, function() {
-					
-					if( highlight ) {
-						$(target).addClass('highlight-anim');
-
-						setTimeout(function(){
-							$(target).removeClass('highlight-anim');
-						}, 1200);
-					}
-
-					$('body').removeClass('scrolling');
-				});
-
-				return this;
-
-			}
-
-		}
-
-	});
-
-}).apply(this, [window.theme, jQuery]);
-
-
-// Newsletter
-(function(theme, $) {
-
-	theme = theme || {};
-
-	var initialized = false;
-
-	$.extend(theme, {
-
-		Newsletter: {
-
-			defaults: {
-				wrapper: $('.newsletter-form')
-			},
-
-			initialize: function($wrapper, opts) {
-				if (initialized) {
-					return this;
-				}
-
-				initialized = true;
-				this.$wrapper = ($wrapper || this.defaults.wrapper);
-
-				this
-					.setOptions(opts)
-					.build();
-
-				return this;
-			},
-
-			setOptions: function(opts) {
-				this.options = $.extend(true, {}, this.defaults, opts, theme.fn.getOptions(this.$wrapper.data('plugin-options')));
-
-				return this;
-			},
-
-			build: function() {
-				if (!($.isFunction($.fn.validate))) {
-					return this;
-				}
-
-				var self = this;
-
-				self.$wrapper.each(function(){
-
-					var $wrapper = $(this),
-					    $email = $wrapper.find('.newsletter-email'),
-						$success = $wrapper.find('.newsletter-form-success'),
-						$error = $wrapper.find('.newsletter-form-error');
-
-					$wrapper.validate({
-						submitHandler: function(form) {
-
-							$.ajax({
-								type: 'POST',
-								url: $wrapper.attr('action'),
-								data: {
-									'email': $email.val()
-								},
-								dataType: 'json'
-							}).always(function(data, textStatus, jqXHR) {
-
-								if (data.response == 'success') {
-									$success.removeClass('d-none');
-									$error.addClass('d-none');
-
-									$email
-										.val('')
-										.blur();
-
-									$wrapper.find('label.error').remove();
-
-									// Uncomment the code below if want hide the Success message after a time
-									// setTimeout(function(){
-									// 	$success.addClass('d-none');
-									// }, 5000);
-
-									return;
-
-								} else {
-									$error.html(data.message);
-									$error.removeClass('d-none');
-									$success.addClass('d-none');
-
-									$email
-										.blur();
-
-									$wrapper.find('label.error').remove();
-
-									return;
-								}
-
-								$error.removeClass('d-none');
-								$success.addClass('d-none');
-
-								$wrapper.find('.has-success')
-									.removeClass('has-success');
-									
-							});
-
-						},
-						rules: {
-							newsletterEmail: {
-								required: true,
-								email: true
-							}
-						},
-						errorPlacement: function(error, element) {
-							if( !element.next().hasClass('input-group') ) {
-								element.closest('.newsletter-form').append(error);
-							} else {
-								error.insertAfter(element.parent());
-							}
-						}
-					});
-
-				});
-
-				return this;
-			}
-
-		}
-
-	});
-
-}).apply(this, [window.theme, jQuery]);
-
-// Search
-(function(theme, $) {
-
-	theme = theme || {};
-
-	var initialized = false;
-
-	$.extend(theme, {
-
-		Search: {
-
-			defaults: {
-				wrapper: $('#searchForm')
-			},
-
-			initialize: function($wrapper, opts) {
-				if (initialized) {
-					return this;
-				}
-
-				initialized = true;
-				this.$wrapper = ($wrapper || this.defaults.wrapper);
-
-				this
-					.setOptions(opts)
-					.build();
-
-				return this;
-			},
-
-			setOptions: function(opts) {
-				this.options = $.extend(true, {}, this.defaults, opts, theme.fn.getOptions(this.$wrapper.data('plugin-options')));
-
-				return this;
-			},
-
-			build: function() {
-				if (!($.isFunction($.fn.validate))) {
-					return this;
-				}
-
-				this.$wrapper.validate({
-					errorPlacement: function(error, element) {}
-				});
-
-				return this;
-			}
-
-		}
-
-	});
-
-}).apply(this, [window.theme, jQuery]);
-
-// Sticky Header
-(function(theme, $) {
-
-	theme = theme || {};
-
-	var initialized = false;
-
-	$.extend(theme, {
-
-		StickyHeader: {
-
-			defaults: {
-				wrapper: $('#header'),
-				headerBody: $('#header .header-body'),
-				stickyEnabled: true,
-				stickyEnableOnBoxed: true,
-				stickyEnableOnMobile: true,
-				stickyStartAt: 0,
-				stickyStartAtElement: false,
-				stickySetTop: 0,
-				stickyHeaderContainerHeight: false,
-				stickyChangeLogo: false
-			},
-
-			initialize: function($wrapper, opts) {
-				if (initialized) {
-					return this;
-				}
-
-				initialized = true;
-				this.$wrapper = ($wrapper || this.defaults.wrapper);
-
-				this
-					.setOptions(opts)
-					.build()
-					.events();
-
-				return this;
-			},
-
-			setOptions: function(opts) {
-				this.options = $.extend(true, {}, this.defaults, opts, theme.fn.getOptions(this.$wrapper.data('plugin-options')));
-
-				return this;
-			},
-
-			build: function() {
-				if (!this.options.stickyEnableOnBoxed && $('html').hasClass('boxed') || !this.options.stickyEnabled) {
-					return this;
-				}
-
-				var self = this,
-					$html = $('html'),
-					$window = $(window),
-					sideHeader = $html.hasClass('side-header'),
-					initialHeaderTopHeight = self.options.wrapper.find('.header-top').outerHeight(),
-					initialHeaderContainerHeight = self.options.wrapper.find('.header-container').outerHeight(),
-					minHeight;
-
-				// HTML Classes
-				$html.addClass('sticky-header-enabled');
-
-				if (parseInt(self.options.stickySetTop) < 0) {
-					$html.addClass('sticky-header-negative');
-				}
-
-				// Set Start At
-				if(self.options.stickyStartAtElement) {
-
-					var $stickyStartAtElement = $(self.options.stickyStartAtElement);
-
-					$(window).on('scroll resize', function() {
-						self.options.stickyStartAt = $stickyStartAtElement.offset().top;
-					});
-
-					$(window).trigger('resize');
-				}
-
-				// Boxed
-				if($html.hasClass('boxed') && (parseInt(self.options.stickyStartAt) == 0) && $window.width() > 991) {
-					self.options.stickyStartAt = 30;
-				}
-
-				// Define Min Height value
-				if( self.options.wrapper.find('.header-top').get(0) ) {
-					minHeight = ( initialHeaderTopHeight + initialHeaderContainerHeight );
 				} else {
-					minHeight = initialHeaderContainerHeight;
+					$body
+						.css({
+							position: '',
+							top: ''
+						})
+						.scrollTop( $body.data( 'scrollTop' ) );
 				}
+			}, 150);
+		}
 
-				// Set header Body Position When Always Sticky
-				if( self.options.stickyStartAt == 0 ) {
-					self.options.headerBody.css('position','fixed');
-				}
+	};
 
-				// Two Logos Effect
-				if( self.options.wrapper.find('.header-logo img').length > 1 ) {
-					self.options.wrapper.find('.header-logo .logo-2').removeClass('d-none');
-				}
+	// expose to scope
+	$.extend(theme, {
+		Skeleton: Skeleton
+	});
 
-				// Set Wrapper Min Height
-				$window.on('stickyHeader.activate stickyHeader.deactivate', function(){
-					self.options.wrapper.css('min-height', minHeight);
-				});
+}).apply(this, [window.theme, jQuery]);
 
-				// Sticky Header Container Height
-				if( self.options.stickyHeaderContainerHeight ) {
-					self.options.wrapper.find('.header-container').css('height', self.options.wrapper.find('.header-container').outerHeight());
-				}
+// Tab Navigation
+(function($) {
 
-				// Check Sticky Header
-				self.checkStickyHeader = function() {
-					if ($window.scrollTop() >= parseInt(self.options.stickyStartAt)) {
-						self.activateStickyHeader();
-					} else {
-						self.deactivateStickyHeader();
-					}
-				};
-				
-				// Activate Sticky Header
-				self.activateStickyHeader = function() {
+	'use strict';
 
-					if ($window.width() < 992) {
-						if (!self.options.stickyEnableOnMobile) {
-							self.deactivateStickyHeader();
-							return;
-						}
-					} else {
-						if (sideHeader) {
-							self.deactivateStickyHeader();
-							return;
-						}
-					}
+	if( $('html.has-tab-navigation').get(0) ) {
 
-					$html.addClass('sticky-header-active');
+		var $window 	 	  = $( window ),
+			$toggleMenuButton = $('.toggle-menu'),
+			$navActive   	  = $('.tab-navigation nav > ul .nav-active'),
+			$tabNav      	  = $('.tab-navigation'),
+			$tabItem 	 	  = $('.tab-navigation nav > ul > li a'),
+			$contentBody 	  = $('.content-body');
 
-					// Set Header Body Position Fixed and top value
-					if( self.options.stickyStartAt ) {
-						self.options.headerBody.css('position','fixed');
-						self.options.headerBody.css('top', self.options.stickySetTop);	
-					}
-
-					// Sticky Effect - Shrink
-					if( self.options.wrapper.hasClass('header-effect-shrink') ) {
-
-						// If Header Top
-						if( self.options.wrapper.find('.header-top').get(0) ) {
-							self.options.wrapper.find('.header-top').css({
-								height: 0,
-								'min-height': 0,
-								overflow: 'hidden'
-							});
-						}
-
-						// Header Container
-						if( self.options.stickyHeaderContainerHeight ) {
-							self.options.wrapper.find('.header-container').css({
-								height: self.options.stickyHeaderContainerHeight,
-								'min-height': 0
-							});
-						} else {
-							self.options.wrapper.find('.header-container').css({
-								height: (initialHeaderContainerHeight / 3) * 2, // one third of container height
-								'min-height': 0
-							});
-						}
-
-					}
-
-					// Two Logos Effect
-					if( self.options.wrapper.find('.header-logo img').length > 1 ) {
-						var logo1 = $('#header .header-logo .logo-1'),
-							logo2 = $('#header .header-logo .logo-2');
-
-						// First Logo
-						logo1.parent().css('pointer-events','none');
-						logo1.removeClass('active');
-
-						// Second Logo
-						logo2.addClass('active');
-
-					}
-
-					// Set Logo Size and Position
-					if (self.options.stickyChangeLogo) {
-						self.changeLogo(true);
-					}
-
-					// Change Logo Src
-					if( self.options.wrapper.find('.header-logo img').attr('data-change-src') ) {
-						self.changeLogoSrc(true);
-					}
-
-					$.event.trigger({
-						type: 'stickyHeader.activate'
-					});
-				};
-
-				// Deactivate Sticky Header
-				self.deactivateStickyHeader = function() {
-
-					$html.removeClass('sticky-header-active');
-
-					self.options.headerBody.css('top', 0);
-
-					// Set Logo Size and Position
-					if (self.options.stickyChangeLogo) {
-						self.changeLogo(false);
-					}
-
-					// Change Logo Src
-					if( self.options.wrapper.find('.header-logo img').attr('data-change-src') ) {
-						self.changeLogoSrc(false);
-					}
-
-					// Reset Header Body Position
-					self.options.headerBody.css('position', 'static');
-
-					// Sticky Effect - Shrink
-					if( self.options.wrapper.hasClass('header-effect-shrink') ) {
-
-						// Boxed Layout
-						if( $html.hasClass('boxed') ) {
-
-							// Set Header Body Position Absolute
-							self.options.headerBody.css('position','absolute');
-
-							if( $window.scrollTop() > $('.body').offset().top ) {
-								// Set Header Body Position Fixed
-								self.options.headerBody.css('position','fixed');								
-							}
-
-						} else {
-							// Set Header Body Position Fixed
-							self.options.headerBody.css('position','fixed');
-						}
-
-						// If Header Top
-						if( self.options.wrapper.find('.header-top').get(0) ) {
-							self.options.wrapper.find('.header-top').css({
-								height: initialHeaderTopHeight,
-								overflow: 'visible'
-							});
-						}
-
-						// Header Container
-						self.options.wrapper.find('.header-container').css({
-							height: initialHeaderContainerHeight
+		$tabItem.on('click', function(e){
+			if( $(this).parent().hasClass('dropdown') || $(this).parent().hasClass('dropdown-submenu') ) {
+				if( $window.width() < 992 ) {
+					if( $(this).parent().hasClass('nav-expanded') ) {
+						$(this).closest('li').find( '> ul' ).slideUp( 'fast', function() {
+							$(this).css( 'display', '' );
+							$(this).closest('li').removeClass( 'nav-expanded' );
 						});
-
-					}
-
-					// Two Logos Effect
-					if( self.options.wrapper.find('.header-logo img').length > 1 ) {
-						var logo1 = $('#header .header-logo .logo-1'),
-							logo2 = $('#header .header-logo .logo-2');
-
-						// First Logo
-						logo1.parent().css('pointer-events','auto');
-						logo1.addClass('active');
-
-						// Second Logo
-						logo2.removeClass('active');
-
-					}
-
-					$.event.trigger({
-						type: 'stickyHeader.deactivate'
-					});
-				};
-
-				// Always Sticky
-				if (parseInt(self.options.stickyStartAt) <= 0) {
-					self.activateStickyHeader();
-				}
-
-				// Set Logo Size and Position
-				if (self.options.stickyChangeLogo) {
-
-					var $logoWrapper = self.options.wrapper.find('.header-logo'),
-						$logo = $logoWrapper.find('img'),
-						logoWidth = $logo.attr('width'),
-						logoHeight = $logo.attr('height'),
-						logoSmallTop = parseInt($logo.attr('data-sticky-top') ? $logo.attr('data-sticky-top') : 0),
-						logoSmallWidth = parseInt($logo.attr('data-sticky-width') ? $logo.attr('data-sticky-width') : 'auto'),
-						logoSmallHeight = parseInt($logo.attr('data-sticky-height') ? $logo.attr('data-sticky-height') : 'auto');
-
-					self.changeLogo = function(activate) {
-						if(activate) {
-							
-							$logo.css({
-								'top': logoSmallTop,
-								'width': logoSmallWidth,
-								'height': logoSmallHeight
-							});
-
-						} else {
-							
-							$logo.css({
-								'top': 0,
-								'width': logoWidth,
-								'height': logoHeight
-							});
-
+					} else {
+						if( $(this).parent().hasClass('dropdown') ) {
+							$tabItem.parent().removeClass('nav-expanded');
 						}
+
+						$(this).parent().addClass('expanding');
+						
+						$(this).closest('li').find( '> ul' ).slideDown( 'fast', function() {
+							$tabItem.parent().removeClass('expanding');
+							$(this).closest('li').addClass( 'nav-expanded' );
+							$(this).css( 'display', '' );
+
+							if( ($(this).position().top + $(this).height()) < $window.scrollTop() ) {
+								$('html,body').animate({ scrollTop: $(this).offset().top - 100 }, 300);
+							}
+						});
 					}
-
-				}
-
-				// Change Logo Src
-				if( self.options.wrapper.find('.header-logo img').attr('data-change-src') ) {
-					var $logo = self.options.wrapper.find('.header-logo img'),
-						logoSrc = $logo.attr('src'),
-						logoNewSrc = $logo.attr('data-change-src');
-
-					self.changeLogoSrc = function(activate) {
-						if(activate) {
-							$logo.attr('src', logoNewSrc);
-						} else {
-							$logo.attr('src', logoSrc);
-						}
-					}
-				}
-
-				return this;
-			},
-
-			events: function() {
-				var self = this;
-
-				if (!this.options.stickyEnableOnBoxed && $('body').hasClass('boxed') || !this.options.stickyEnabled) {
-					return this;
-				}
-
-				if (!self.options.alwaysStickyEnabled) {
-					$(window).on('scroll resize', function() {
-						self.checkStickyHeader();
-					});
 				} else {
-					self.activateStickyHeader();
+					if( !$(this).parent().hasClass('dropdown') ) {
+						e.preventDefault();
+						return false;
+					}
+					
+					if( $(this).parent().hasClass('nav-expanded') ) {
+						$tabItem.parent().removeClass('nav-expanded');
+						$contentBody.removeClass('tab-menu-opened');
+						return;
+					}
+					
+					$tabItem.parent().removeClass('nav-expanded');
+					$contentBody.addClass('tab-menu-opened');
+					$(this).parent().addClass('nav-expanded');	
 				}
+			}
+		});
 
-				return this;
+		$window.on('scroll', function(){
+			if( $window.width() < 992 ) {
+				var tabNavOffset = ( $tabNav.position().top + $tabNav.height() ) + 100,
+					windowOffset = $window.scrollTop();
+
+				if( windowOffset > tabNavOffset ) {
+					$tabNav.removeClass('show');
+				}
+			}
+		});
+
+		$toggleMenuButton.on('click', function(){
+			if( !$tabNav.hasClass('show') ) {
+				$('html,body').animate({ scrollTop: $tabNav.offset().top - 50 }, 300);
+			}
+		});
+		
+	}
+
+}).apply(this, [jQuery]);
+
+/* Browser Selector */
+(function($) {
+	$.extend({
+
+		browserSelector: function() {
+
+			// jQuery.browser.mobile (http://detectmobilebrowser.com/)
+			(function(a){(jQuery.browser=jQuery.browser||{}).mobile=/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))})(navigator.userAgent||navigator.vendor||window.opera);
+
+			// Touch
+			var hasTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+
+			var u = navigator.userAgent,
+				ua = u.toLowerCase(),
+				is = function (t) {
+					return ua.indexOf(t) > -1;
+				},
+				g = 'gecko',
+				w = 'webkit',
+				s = 'safari',
+				o = 'opera',
+				h = document.documentElement,
+				b = [(!(/opera|webtv/i.test(ua)) && /msie\s(\d)/.test(ua)) ? ('ie ie' + parseFloat(navigator.appVersion.split("MSIE")[1])) : is('firefox/2') ? g + ' ff2' : is('firefox/3.5') ? g + ' ff3 ff3_5' : is('firefox/3') ? g + ' ff3' : is('gecko/') ? g : is('opera') ? o + (/version\/(\d+)/.test(ua) ? ' ' + o + RegExp.jQuery1 : (/opera(\s|\/)(\d+)/.test(ua) ? ' ' + o + RegExp.jQuery2 : '')) : is('konqueror') ? 'konqueror' : is('chrome') ? w + ' chrome' : is('iron') ? w + ' iron' : is('applewebkit/') ? w + ' ' + s + (/version\/(\d+)/.test(ua) ? ' ' + s + RegExp.jQuery1 : '') : is('mozilla/') ? g : '', is('j2me') ? 'mobile' : is('iphone') ? 'iphone' : is('ipod') ? 'ipod' : is('mac') ? 'mac' : is('darwin') ? 'mac' : is('webtv') ? 'webtv' : is('win') ? 'win' : is('freebsd') ? 'freebsd' : (is('x11') || is('linux')) ? 'linux' : '', 'js'];
+
+			c = b.join(' ');
+
+			if ($.browser.mobile) {
+				c += ' mobile';
+			}
+
+			if (hasTouch) {
+				c += ' touch';
+			}
+
+			h.className += ' ' + c;
+
+			// IE11 Detect
+			var isIE11 = !(window.ActiveXObject) && "ActiveXObject" in window;
+
+			if (isIE11) {
+				$('html').removeClass('gecko').addClass('ie ie11');
+				return;
+			}
+
+			// Dark and Boxed Compatibility
+			if($('body').hasClass('dark')) {
+				$('html').addClass('dark');
+			}
+
+			if($('body').hasClass('boxed')) {
+				$('html').addClass('boxed');
 			}
 
 		}
 
 	});
+
+	$.browserSelector();
+
+})(jQuery);
+
+// Mailbox
+(function(theme, $) {
+
+	theme = theme || {};
+
+	var instanceName = '__mailbox';
+
+	var capitalizeString = function( str ) {
+    	return str.charAt( 0 ).toUpperCase() + str.slice( 1 );
+	}
+
+	var Mailbox = function($wrapper) {
+		return this.initialize($wrapper);
+	};
+
+	Mailbox.prototype = {
+		initialize: function($wrapper) {
+			if ( $wrapper.data( instanceName ) ) {
+				return this;
+			}
+
+			this.$wrapper = $wrapper;
+
+			this
+				.setVars()
+				.setData()
+				.build()
+				.events();
+
+			return this;
+		},
+
+		setVars: function() {
+			this.view = capitalizeString( this.$wrapper.data( 'mailbox-view' ) || "" );
+
+			return this;
+		},
+
+		setData: function() {
+			this.$wrapper.data(instanceName, this);
+
+			return this;
+		},
+
+		build: function() {
+
+			if ( typeof this[ 'build' + this.view ] === 'function' ) {
+				this[ 'build' + this.view ].call( this );
+			}
+
+
+			return this;
+		},
+
+		events: function() {
+			if ( typeof this[ 'events' + this.view ] === 'function' ) {
+				this[ 'events' + this.view ].call( this );
+			}
+
+			return this;
+		},
+
+		buildFolder: function() {
+			this.$wrapper.find('.mailbox-email-list .nano').nanoScroller({
+				alwaysVisible: true,
+				preventPageScrolling: true
+			});
+		},
+
+		buildEmail: function() {
+			this.buildComposer();
+		},
+
+		buildCompose: function() {
+			this.buildComposer();
+		},
+
+		buildComposer: function() {
+			this.$wrapper.find( '#compose-field' ).summernote({
+				height: 250,
+				toolbar: [
+					['style', ['style']],
+					['font', ['bold', 'italic', 'underline', 'clear']],
+					['fontname', ['fontname']],
+					['color', ['color']],
+					['para', ['ul', 'ol', 'paragraph']],
+					['height', ['height']],
+					['table', ['table']],
+					['insert', ['link', 'picture', 'video']],
+					['view', ['fullscreen']],
+					['help', ['help']]
+				]
+			});
+		},
+
+		eventsCompose: function() {
+			var $composer,
+				$contentBody,
+				$html,
+				$innerBody;
+
+			$composer		= $( '.note-editable' );
+			$contentBody	= $( '.content-body' );
+			$html			= $( 'html' );
+			$innerBody		= $( '.inner-body' );
+
+			var adjustComposeSize = function() {
+				var composerHeight,
+					composerTop,
+					contentBodyPaddingBottom,
+					innerBodyHeight,
+					viewportHeight,
+					viewportWidth;
+
+
+				contentBodyPaddingBottom	= parseInt( $contentBody.css('paddingBottom'), 10 ) || 0;
+				viewportHeight				= Math.max( document.documentElement.clientHeight, window.innerHeight || 0 );
+				viewportWidth				= Math.max( document.documentElement.clientWidth, window.innerWidth || 0 );
+
+				$composer.css( 'height', '' );
+
+				if ( viewportWidth < 767 || $html.hasClass('mobile-device') ) {
+					composerTop	   = $composer.offset().top;
+					composerHeight = viewportHeight - composerTop;
+				} else {
+					if ( $html.hasClass( 'fixed' ) ) {
+						composerTop	= $composer.offset().top;
+					} else {
+						composerTop	= $composer.position().top;
+					}
+					composerHeight = $innerBody.outerHeight() - composerTop;
+				}
+
+				composerHeight -= contentBodyPaddingBottom;
+
+				$composer.css({
+					height: composerHeight
+				});
+			};
+
+			var timer;
+			$(window)
+				.on( 'resize orientationchange sidebar-left-toggle mailbox-recalc', function() {
+					clearTimeout( timer );
+					timer = setTimeout(function() {
+						adjustComposeSize();
+					}, 100);
+				});
+
+			adjustComposeSize();
+		}
+	};
+
+	// expose to scope
+	$.extend(theme, {
+		Mailbox: Mailbox
+	});
+
+	// jquery plugin
+	$.fn.themeMailbox = function(opts) {
+		return this.each(function() {
+			var $this = $(this);
+
+			if ($this.data(instanceName)) {
+				return $this.data(instanceName);
+			} else {
+				return new Mailbox($this);
+			}
+
+		});
+	}
 
 }).apply(this, [window.theme, jQuery]);
