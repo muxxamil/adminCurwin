@@ -29,7 +29,7 @@
 						<div class="mg-toolbar">
 							<div class="mg-option checkbox-custom checkbox-inline">
 								<input type="checkbox" id="file_<?php echo $value->id; ?>" value="<?php echo $value->id; ?>">
-								<label for="file_1">SELECT</label>
+								<label for="file_<?php echo $value->id; ?>">SELECT</label>
 							</div>
 							<div class="mg-group float-right">
 								<a class="modal-sizes" href="#deletePostModal" onclick="deletePostButtonClick(<?php echo $value->id; ?>)">DELETE</a>
